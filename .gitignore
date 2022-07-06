@@ -1,0 +1,14 @@
+/cmake-build-*/
+/.idea/
+docs/html
+out/
+bin/
+build/
+.vscode/
+__pycache__/
+.*
+.DS_Store
+core
+*.vim
+compile_commands.json
+third_party/go

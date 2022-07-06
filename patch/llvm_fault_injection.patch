@@ -1,0 +1,358 @@
+diff --git a/llvm/lib/Transforms/Instrumentation/SanitizerCoverage.cpp b/llvm/lib/Transforms/Instrumentation/SanitizerCoverage.cpp
+index d3b60c7add34..46a4a0a2a212 100644
+--- a/llvm/lib/Transforms/Instrumentation/SanitizerCoverage.cpp
++++ b/llvm/lib/Transforms/Instrumentation/SanitizerCoverage.cpp
+@@ -24,6 +24,7 @@
+ #include "llvm/IR/GlobalVariable.h"
+ #include "llvm/IR/IRBuilder.h"
+ #include "llvm/IR/InlineAsm.h"
++#include "llvm/IR/InstIterator.h"
+ #include "llvm/IR/IntrinsicInst.h"
+ #include "llvm/IR/Intrinsics.h"
+ #include "llvm/IR/LLVMContext.h"
+@@ -41,6 +42,8 @@
+ #include "llvm/Transforms/Utils/BasicBlockUtils.h"
+ #include "llvm/Transforms/Utils/ModuleUtils.h"
+ 
++#include <fstream>
++
+ using namespace llvm;
+ 
+ #define DEBUG_TYPE "sancov"
+@@ -246,6 +249,9 @@ private:
+   std::pair<Value *, Value *> CreateSecStartEnd(Module &M, const char *Section,
+                                                 Type *Ty);
+ 
++  void FindProbeFunction(Module &M);
++  void FindErrorSite(Function *F, std::set<CallInst *> &);
++
+   void SetNoSanitizeMetadata(Instruction *I) {
+     I->setMetadata(I->getModule()->getMDKindID("nosanitize"),
+                    MDNode::get(*C, None));
+@@ -263,6 +269,7 @@ private:
+   std::array<FunctionCallee, 2> SanCovTraceDivFunction;
+   FunctionCallee SanCovTraceGepFunction;
+   FunctionCallee SanCovTraceSwitchFunction;
++  FunctionCallee ErrorProne;
+   GlobalVariable *SanCovLowestStack;
+   Type *Int128PtrTy, *IntptrTy, *IntptrPtrTy, *Int64Ty, *Int64PtrTy, *Int32Ty,
+       *Int32PtrTy, *Int16PtrTy, *Int16Ty, *Int8Ty, *Int8PtrTy, *Int1Ty,
+@@ -284,6 +291,9 @@ private:
+ 
+   const SpecialCaseList *Allowlist;
+   const SpecialCaseList *Blocklist;
++
++  std::set<Function *> CalledFunctionSet;
++  std::set<Function *> FooFunctionSet;
+ };
+ 
+ class ModuleSanitizerCoverageLegacyPass : public ModulePass {
+@@ -448,6 +458,8 @@ bool ModuleSanitizerCoverage::instrumentModule(
+   Int8Ty = IRB.getInt8Ty();
+   Int1Ty = IRB.getInt1Ty();
+ 
++  FindProbeFunction(M);
++
+   SanCovTracePCIndir =
+       M.getOrInsertFunction(SanCovTracePCIndirName, VoidTy, IntptrTy);
+   // Make sure smaller parameters are zero-extended to i64 if required by the
+@@ -1087,6 +1099,299 @@ ModuleSanitizerCoverage::getSectionEnd(const std::string &Section) const {
+   return "__stop___" + Section;
+ }
+ 
++void ModuleSanitizerCoverage::FindProbeFunction(Module &M) {
++    bool IsPCIBus = false;
++    bool IsUSBBus = false;
++	bool IsI2CBus = false;
++    bool Flag = false;
++    Function *ProbeFunction = NULL;
++
++    const std::string &SourceFileName = M.getSourceFileName();
++    if (SourceFileName.find("drivers/") != SourceFileName.npos ||
++            SourceFileName.find("sound/") != SourceFileName.npos) {
++        Flag = true;
++    }
++    if (!Flag) {
++        return;
++    }
++
++    for (auto &Function : M) {
++        if (!Function.hasName())
++            continue;
++        const std::string &FunctionName = Function.getName().str();
++        if (FunctionName.find("__pci_register_driver") != FunctionName.npos ||
++            FunctionName.find("drm_legacy_pci_init") != FunctionName.npos) {
++            IsPCIBus = true;
++            break;
++        } 
++        if (FunctionName.find("usb_register_driver") != FunctionName.npos) {
++            IsUSBBus = true;
++            break;
++        }
++        if (FunctionName.find("i2c_register_driver") != FunctionName.npos) {
++            IsI2CBus = true;
++            break;
++        }
++    }
++
++    if (!IsPCIBus && !IsUSBBus && !IsI2CBus)
++        return;
++
++    for (auto &Global : M.getGlobalList()) {
++        llvm::Type *TargetType = Global.getType();
++        assert(TargetType->isPointerTy());
++        llvm::Type *ContainedType = TargetType->getContainedType(0);
++        if (!Global.hasInitializer() || !ContainedType->isStructTy()) 
++            continue;
++        if (IsPCIBus && ContainedType->getStructName().str().find("struct.pci_driver") == std::string::npos) {
++            continue;
++        }
++        if (IsUSBBus && ContainedType->getStructName().str().find("struct.usb_driver") == std::string::npos) {
++            continue;
++        }
++        if (IsI2CBus && ContainedType->getStructName().str().find("struct.i2c_driver") == std::string::npos) {
++            continue;
++        }
++        llvm::Constant *Driver = Global.getInitializer();
++        llvm::ConstantStruct *DriverStruct = llvm::dyn_cast<llvm::ConstantStruct>(Driver);
++        if (!DriverStruct)
++            continue;
++        uint32_t ProbePos = 0;
++        if (IsPCIBus) {
++            ProbePos = 3;
++        } else if (IsUSBBus) {
++            ProbePos = 1;
++        } else if (IsI2CBus) {
++			ProbePos = 3;
++			auto *DriverProbe = DriverStruct->getAggregateElement(ProbePos);
++			auto *ProbeFunction = llvm::dyn_cast<llvm::Function>(DriverProbe);
++			if (!ProbeFunction) {
++				ProbePos = 1;
++			}
++		}
++        llvm::Constant *DriverProbe = DriverStruct->getAggregateElement(ProbePos);
++        ProbeFunction = llvm::dyn_cast<llvm::Function>(DriverProbe);
++        break;
++    }
++
++    if (!ProbeFunction || ProbeFunction->isDeclaration())
++        return;
++    
++    StructType *KernelParam = StructType::getTypeByName(*C, "struct.kernel_param");
++    if (!KernelParam) // For drivers which are not loadable, we shouldn't transform them;
++        return;
++    Constant *ParamErrorCntVar = M.getOrInsertGlobal("__param_error_cnt", KernelParam);
++    GlobalVariable *GlobalParamErrorCnt = dyn_cast<GlobalVariable>(ParamErrorCntVar);
++    GlobalParamErrorCnt->setConstant(true);
++    GlobalParamErrorCnt->setLinkage(GlobalValue::LinkageTypes::InternalLinkage);
++    GlobalParamErrorCnt->setAlignment(MaybeAlign(8));
++    GlobalParamErrorCnt->setSection("__param");
++
++    Constant *CurrCnt = ConstantInt::getSigned(Int32Ty, 0);
++    Constant *CurrCntVar = M.getOrInsertGlobal("curr_cnt", CurrCnt->getType());
++    GlobalVariable *GlobalCurrCntVar = dyn_cast<GlobalVariable>(CurrCntVar);
++    GlobalCurrCntVar->setAlignment(MaybeAlign(4));
++    GlobalCurrCntVar->setInitializer(CurrCnt);
++    GlobalCurrCntVar->setLinkage(GlobalValue::LinkageTypes::InternalLinkage);
++
++    Constant *ErrorCnt = ConstantInt::getSigned(Int32Ty, -1);
++    Constant *ErrorCntVar = M.getOrInsertGlobal("error_cnt", ErrorCnt->getType());
++    GlobalVariable *GlobalErrorCntVar = dyn_cast<GlobalVariable>(ErrorCntVar);
++    GlobalErrorCntVar->setAlignment(MaybeAlign(4));
++    GlobalErrorCntVar->setInitializer(ErrorCnt);
++    GlobalErrorCntVar->setLinkage(GlobalValue::LinkageTypes::InternalLinkage);
++
++    Constant *ParamStrErrorCnt = ConstantDataArray::getString(*C, "error_cnt\00");
++    Constant *ParamStrErrorCntVar = M.getOrInsertGlobal("__param_str_error_cnt", ParamStrErrorCnt->getType());
++    GlobalVariable *GlobalParamStrErrorCntVar = dyn_cast<GlobalVariable>(ParamStrErrorCntVar);
++    GlobalParamStrErrorCntVar->setInitializer(ParamStrErrorCnt);
++    GlobalParamStrErrorCntVar->setAlignment(MaybeAlign(1));
++    GlobalParamStrErrorCntVar->setLinkage(GlobalValue::LinkageTypes::InternalLinkage);
++
++    Constant *ErrorCntType = ConstantDataArray::getString(*C, "parmtype=error_cnt:int\00");
++    Constant *ErrorCntTypeVar = M.getOrInsertGlobal("__UNIQUE_ID_error_cnttype557", ErrorCntType->getType());
++    GlobalVariable *GlobalErrorCntTypeVar = dyn_cast<GlobalVariable>(ErrorCntTypeVar);
++    GlobalErrorCntTypeVar->setConstant(true);
++    GlobalErrorCntTypeVar->setLinkage(GlobalValue::LinkageTypes::InternalLinkage);
++    GlobalErrorCntTypeVar->setAlignment(MaybeAlign(1));
++    GlobalErrorCntTypeVar->setSection(".modinfo");
++    GlobalErrorCntTypeVar->setInitializer(ErrorCntType);
++
++    StructType *KernelParamOps = StructType::getTypeByName(*C, "struct.kernel_param_ops");
++    Constant *ParamOpsInt = M.getOrInsertGlobal("param_ops_int", KernelParamOps);
++    GlobalVariable *GlobalParamOpsInt = dyn_cast<GlobalVariable>(ParamOpsInt);
++    GlobalParamOpsInt->setAlignment(MaybeAlign(8));
++    GlobalParamOpsInt->setDSOLocal(true);
++    GlobalParamOpsInt->setConstant(true);
++
++    std::vector<Constant *> StructVals;
++    std::vector<Constant *> ConstantVals;
++    ConstantVals.push_back(dyn_cast<Constant>(ConstantInt::get(Int32Ty, 0)));
++    ConstantVals.push_back(dyn_cast<Constant>(ConstantInt::get(Int32Ty, 0)));
++    StructVals.push_back(ConstantExpr::getGetElementPtr(ParamStrErrorCnt->getType(), ParamStrErrorCntVar, ConstantVals, true));
++
++    GlobalVariable *GlobalThisModule = M.getGlobalVariable("__this_module");
++    Constant *ThisModule = NULL;
++    if (!GlobalThisModule)
++        ThisModule = ConstantPointerNull::get(PointerType::getUnqual(StructType::getTypeByName(*C, "struct.module")));
++    else
++        ThisModule = M.getOrInsertGlobal("__this_module", StructType::getTypeByName(*C, "struct.module"));
++    StructVals.push_back(ThisModule);
++    StructVals.push_back(ParamOpsInt);
++    StructVals.push_back(ConstantInt::get(Int16Ty, 0, true));
++    StructVals.push_back(ConstantInt::get(Int8Ty, -1, true));
++    StructVals.push_back(ConstantInt::get(Int8Ty, 0, true));
++
++    StructType *UnionType = dyn_cast<StructType>(KernelParam->getElementType(6));
++    std::vector<Constant *> UnionAnonVals;
++    UnionAnonVals.push_back(ConstantExpr::getBitCast(ErrorCntVar, Int8PtrTy));
++    StructVals.push_back(ConstantStruct::get(UnionType, UnionAnonVals));
++
++    Constant *ParamErrorCnt = ConstantStruct::get(KernelParam, StructVals);
++    GlobalParamErrorCnt->setInitializer(ParamErrorCnt);
++    GlobalsToAppendToCompilerUsed.push_back(GlobalParamErrorCnt);
++
++    FunctionType *ErrorProneTy = FunctionType::get(Int32Ty, false);
++    ErrorProne = M.getOrInsertFunction("error_prone", ErrorProneTy);
++    Function *ErrorProneFunction = dyn_cast<Function>(ErrorProne.getCallee());
++    ErrorProneFunction->setLinkage(GlobalValue::LinkageTypes::InternalLinkage);
++    ErrorProneFunction->addFnAttr("frame-pointer", "all");
++
++    BasicBlock *ErrorProneBlock = BasicBlock::Create(*C, "entry", ErrorProneFunction);
++    IRBuilder<> Builder(ErrorProneBlock);
++    LoadInst *LoadInst1 = Builder.CreateLoad(Int32Ty, CurrCntVar);
++    LoadInst *LoadInst2 = Builder.CreateLoad(Int32Ty, ErrorCntVar);
++    Value *AddInst = Builder.CreateBinOp(Instruction::BinaryOps::Add, LoadInst1, ConstantInt::get(Int32Ty, 1, true));
++    Builder.CreateStore(AddInst, CurrCntVar);
++    Value *ICmpInst = Builder.CreateCmp(CmpInst::Predicate::ICMP_EQ, LoadInst1, LoadInst2);
++    Value *ZExtInst = Builder.CreateZExt(ICmpInst, Int32Ty);
++    Builder.CreateRet(ZExtInst);
++
++    std::set<CallInst *> CallInstSet;
++    CalledFunctionSet.clear();
++    FindErrorSite(ProbeFunction, CallInstSet);
++
++	std::hash<std::string> FileNameHash;
++	const auto &FileName = std::string{"/tmp/ErrorSite/"} + std::to_string(FileNameHash(M.getSourceFileName()));
++	std::ofstream OutFile{FileName};
++	OutFile << M.getSourceFileName().c_str() << "\n";
++	OutFile << CallInstSet.size() << "\n";
++	// llvm::dbgs() << OutFile.is_open() << FileName << "\n";
++
++    for (auto &CallInst : CallInstSet) {
++        bool IsIntToPtr = false;
++        for (auto *Use : CallInst->users()) {
++            auto *CmpInst = llvm::dyn_cast<llvm::CmpInst>(Use);
++            if (!CmpInst)
++                continue;
++            auto *Expr = llvm::dyn_cast<ConstantExpr>(CmpInst->getOperand(0));
++            if (Expr && Expr->isCast()) {
++                IsIntToPtr = true;
++                break;
++            }
++            Expr = llvm::dyn_cast<ConstantExpr>(CmpInst->getOperand(1));
++            if (Expr && Expr->isCast()) {
++                IsIntToPtr = true;
++                break;
++            }
++        }
++        auto *CalledFunction = CallInst->getCalledFunction();
++		auto CalledFunctionName = CalledFunction->getName().str();
++		OutFile << CalledFunctionName << "\n";
++
++        FunctionCallee Foo = CurModule->getOrInsertFunction("foo_" + CalledFunction->getName().str(),
++				CalledFunction->getFunctionType());
++        Function *FooFunction = dyn_cast<llvm::Function>(Foo.getCallee());
++        FooFunction->setLinkage(GlobalValue::LinkageTypes::InternalLinkage);
++        FooFunction->setCallingConv(CallInst->getCallingConv());
++        FooFunction->addFnAttr("frame-pointer", "all");
++        CallInst->setCalledFunction(FooFunction);
++
++        if (FooFunctionSet.find(FooFunction) != FooFunctionSet.end())
++            continue;
++        FooFunctionSet.insert(FooFunction);
++
++        auto *BB1 = BasicBlock::Create(*C, "BB1", FooFunction);
++        auto *BB2 = BasicBlock::Create(*C, "BB2", FooFunction);
++        auto *BB3 = BasicBlock::Create(*C, "BB3", FooFunction);
++        auto *BB4 = BasicBlock::Create(*C, "BB4", FooFunction);
++        IRBuilder<> BB1Builder(BB1);
++        IRBuilder<> BB2Builder(BB2);
++        IRBuilder<> BB3Builder(BB3);
++        IRBuilder<> BB4Builder(BB4);
++
++        Value *StoreInstOperand;
++        if (CalledFunction->getReturnType()->isIntegerTy())
++            StoreInstOperand = ConstantInt::get(CalledFunction->getReturnType(), -1, true);
++        else if (!IsIntToPtr)
++            StoreInstOperand = ConstantPointerNull::get(dyn_cast<PointerType>(CalledFunction->getReturnType()));
++        else
++            StoreInstOperand = ConstantExpr::getIntToPtr(ConstantInt::get(Int64Ty, -1, true), CalledFunction->getReturnType());
++
++        auto *BB1AllocaErr = BB1Builder.CreateAlloca(CalledFunction->getReturnType());
++        auto *BB1CallErrorProne = BB1Builder.CreateCall(ErrorProne);
++        auto *BB1ICmpInst = BB1Builder.CreateICmpNE(BB1CallErrorProne, ConstantInt::get(Int32Ty, 0, true));
++        BB1Builder.CreateCondBr(BB1ICmpInst, BB2, BB3);
++
++        BB2Builder.CreateStore(StoreInstOperand, BB1AllocaErr);
++        BB2Builder.CreateBr(BB4);
++
++        std::vector<Value *> CallArgs;
++        for (auto &Arg : FooFunction->args())
++            CallArgs.emplace_back(&Arg);
++        auto *BB3CallInst = BB3Builder.CreateCall(CalledFunction, CallArgs);
++        BB3CallInst->setCallingConv(CallInst->getCallingConv());
++        BB3Builder.CreateStore(BB3CallInst, BB1AllocaErr);
++        BB3Builder.CreateBr(BB4);
++
++        auto *LoadInst = BB4Builder.CreateLoad(BB1AllocaErr->getType()->getPointerElementType(), BB1AllocaErr);
++        BB4Builder.CreateRet(LoadInst);
++    }
++	OutFile.close();
++}
++
++void ModuleSanitizerCoverage::FindErrorSite(Function *F, std::set<CallInst *> &CallInstSet) {
++    if (!F)
++        return;
++
++    for (auto &I : instructions(F)) {
++        auto *CallInst = llvm::dyn_cast<llvm::CallInst>(&I);
++        if (!CallInst)
++            continue;
++
++        auto *CalledFunction = CallInst->getCalledFunction();
++        if (!CalledFunction || !CalledFunction->getReturnType()->isIntOrPtrTy())
++            continue;
++		const auto &CalledFunctionName = CalledFunction->getName().str();
++		if (!CalledFunctionName.compare("strnlen") || 
++				CalledFunctionName.find("llvm") != std::string::npos ||
++				CalledFunctionName.find("v4l2_ctrl_new_std") != std::string::npos ||
++				CalledFunctionName.find("platform_device_register") != std::string::npos ||
++				CalledFunctionName.find("fb_find_mode") != std::string::npos) {
++			continue;
++		}
++
++        bool Flag = false;
++        for (auto *Use : CallInst->users()) {
++            auto *CmpInst = llvm::dyn_cast<llvm::CmpInst>(Use);
++            if (!CmpInst)
++                continue;
++            Flag = true;
++        }
++        if (!Flag)
++            continue;
++
++        if (CalledFunctionSet.find(CalledFunction) == CalledFunctionSet.end()) {
++            CalledFunctionSet.insert(CalledFunction);
++            FindErrorSite(CalledFunction, CallInstSet);
++        }
++
++		if (CalledFunction->isDeclaration()) {
++			CallInstSet.insert(CallInst);
++		}
++    }
++}
++
+ char ModuleSanitizerCoverageLegacyPass::ID = 0;
+ INITIALIZE_PASS_BEGIN(ModuleSanitizerCoverageLegacyPass, "sancov",
+                       "Pass for instrumenting coverage on functions", false,

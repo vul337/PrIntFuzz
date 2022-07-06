@@ -1,0 +1,69 @@
+{
+    "sound": [
+        "fake_sound_pci_ca0106_snd_ca0106",
+        "fake_sound_pci_hda_snd_hda_intel",
+        "fake_sound_pci_rme9652_snd_hdsp",
+        "fake_sound_pci_snd_bt87x",
+        "fake_sound_pci_snd_cmipci",
+        "fake_sound_pci_snd_ens1370",
+        "fake_sound_pci_snd_fm801",
+        "fake_sound_pci_snd_rme32",
+        "fake_sound_pci_snd_rme96",
+        "fake_sound_soc_intel_skylake_skl",
+        "fake_sound_soc_sof_intel_pci_apl",
+        "fake_sound_soc_sof_intel_pci_cnl",
+        "fake_sound_soc_sof_intel_pci_icl",
+        "fake_sound_soc_sof_intel_pci_tgl"
+    ],
+    "fbdev": [
+        "fake_drivers_video_fbdev_arkfb",
+        "fake_drivers_video_fbdev_cirrusfb",
+        "fake_drivers_video_fbdev_gxt4500",
+        "fake_drivers_video_fbdev_i740fb",
+        "fake_drivers_video_fbdev_kyro_kyrofb",
+        "fake_drivers_video_fbdev_neofb",
+        "fake_drivers_video_fbdev_pm2fb",
+        "fake_drivers_video_fbdev_riva_fbdev",
+        "fake_drivers_video_fbdev_s3fb",
+        "fake_drivers_video_fbdev_savage_savagefb_driver",
+        "fake_drivers_video_fbdev_sm712fb",
+        "fake_drivers_video_fbdev_tridentfb",
+        "fake_drivers_video_fbdev_vt8623fb"
+    ],
+    "gpu": [
+        "fake_drivers_gpu_drm_ast_ast",
+        "fake_drivers_gpu_drm_mgag200_mgag200",
+        "fake_drivers_gpu_drm_tiny_cirrus"
+    ],
+    "media": [
+        "fake_drivers_media_pci_bt8xx_bt878",
+        "fake_drivers_media_pci_cx23885_cx23885_core",
+        "fake_drivers_media_pci_cx25821_cx25821_core",
+        "fake_drivers_media_pci_cx88_cx88_alsa",
+        "fake_drivers_media_pci_cx88_cx88_video",
+        "fake_drivers_media_pci_ddbridge_ddbridge_main",
+        "fake_drivers_media_pci_intel_ipu3_ipu3_cio2_main",
+        "fake_drivers_media_pci_netup_unidvb_netup_unidvb",
+        "fake_drivers_media_pci_saa7164_saa7164_core",
+        "fake_drivers_media_pci_tw5864_tw5864_core",
+        "fake_drivers_media_pci_tw686x_tw686x_core",
+        "fake_drivers_media_pci_tw68_tw68_core",
+        "fake_drivers_media_platform_marvell_ccic_cafe_driver"
+    ],
+    "tty": [
+        "fake_drivers_tty_mxser",
+        "fake_drivers_tty_nozomi",
+        "fake_drivers_tty_serial_8250_8250_exar",
+        "fake_drivers_tty_serial_8250_8250_lpss",
+        "fake_drivers_tty_serial_8250_8250_mid",
+        "fake_drivers_tty_serial_8250_8250_pci",
+        "fake_drivers_tty_serial_8250_8250_pericom",
+        "fake_drivers_tty_serial_jsm_jsm",
+        "fake_drivers_tty_synclink_gt"
+    ],
+    "crash": [
+        "fake_drivers_media_pci_ivtv_ivtv_driver",
+        "fake_sound_pci_snd_atiixp_modem",
+        "fake_sound_pci_snd_ens1371"
+    ]
+}

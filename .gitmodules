@@ -1,0 +1,15 @@
+[submodule "third_party/json"]
+	path = third_party/json
+	url = https://github.com/nlohmann/json.git
+[submodule "third_party/syzkaller"]
+	path = third_party/syzkaller
+	url = https://github.com/google/syzkaller
+[submodule "third_party/qemu"]
+	path = third_party/qemu
+	url = https://github.com/qemu/qemu
+[submodule "third_party/linux"]
+	path = third_party/linux
+	url = https://github.com/torvalds/linux
+[submodule "third_party/llvm"]
+	path = third_party/llvm
+	url = https://github.com/llvm/llvm-project

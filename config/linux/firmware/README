@@ -1,0 +1,402 @@
+                               Firmware Contents
+
+   1. OREN demodulators
+
+   2. Several old USB devices
+
+   3. Conexant devices
+
+   4. Xceive devices
+
+   5. Dibcom driver for dib0700
+
+   6. AV7110
+
+   7. Terratec devices
+
+   8. Trident devices
+
+   9. Abilis devices
+
+   10. ITE devices
+
+   11. Siano devices
+
+   Tarball with all firmwares
+
+   Changes
+
+                              1. OREN demodulators
+
+   dvb-fe-or51132-qam.fw
+   dvb-fe-or51132-vsb.fw
+   dvb-fe-or51211.fw
+
+                           2. Several old USB devices
+
+   dvb-usb-vp7045-01.fw       Twinhan USB-T VP-7045/VP-7046 (MagicBoxII)
+   dvb-usb-vp702x-01.fw       TwinhanDTV StarBox
+   dvb-usb-avertv-a800-02.fw  AVerMedia
+   dvb-usb-dibusb-5.0.0.11.fw various DiBcom USB1.1
+   dvb-usb-dibusb-6.0.0.8.fw  DiBcom/Artec USB2.0
+   dvb-usb-umt-010-02.fw      HanfTek UMT-010 USB2.0
+   dvb-usb-wt220u-01.fw       WideViewer WT-220U PenType DVB-T Receiver
+   dvb-usb-dtt200u-01.fw      Yakumo/Typhoon/Hama USB2.0
+
+                              3. Conexant devices
+
+   v4l-cx231xx-avcore-01.fw  Conexant cx231xx USB
+   v4l-cx23418-apu.fw        Conexant cx18 APU firmware
+   v4l-cx23418-cpu.fw        Conexant cx18 CPU firmware
+   v4l-cx23418-dig.fw        Conexant cx18 DIG firmware
+   v4l-cx23885-enc-broken.fw [DEL: Conexant cx23885 firmware :DEL]
+                             (reported as broken)
+   v4l-cx23885-avcore-01.fw  Conexant cx23885 firmware for cx2584x
+   v4l-cx25840.fw            Conexant firmware for cx2584x
+
+For all the Conexant firmwares, it applies the following license:
+
+  Conexant grants permission to use and redistribute these firmware
+  files for use with Conexant devices, but not as a part of the Linux
+  kernel or in any other form which would require these files themselves
+  to be covered by the terms of the GNU General Public License.
+  These firmware files are distributed in the hope that they will be
+  useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+  of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+                               4. Xceive devices
+
+   dvb-fe-xc5000-1.6.114.fw   Xceive xc5000 tuner
+   dvb-fe-xc5000c-4.1.30.7.fw Xceive xc5000c tuner
+
+Copyright (c) 2009, Xceive Corporation <info@xceive.com>
+
+Permission to use, copy, modify, and/or distribute this software, only
+for use with Xceive ICs, for any purpose with or without fee is hereby
+granted, provided that the above copyright notice and this permission
+notice appear in all source code copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+                          5. Dibcom driver for dib0700
+
+   dvb-usb-dib0700.1.20.fw dib0700 drivers
+
+Copyright (c) 2009, DiBcom
+
+Permission to use, copy, modify, and/or distribute this software for
+any purpose with or without fee is hereby granted, provided that the
+above copyright notice and this permission notice appear in all
+copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
+WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+PERFORMANCE OF THIS SOFTWARE.
+
+                                   6. AV7110
+
+   dvb-ttpci-01.fw-261a Firmware 01.261a
+   dvb-ttpci-01.fw-261b Firmware 01.261b
+   dvb-ttpci-01.fw-261c Firmware 01.261c
+   dvb-ttpci-01.fw-261d Firmware 01.261d
+   dvb-ttpci-01.fw-261f Firmware 01.261f
+   dvb-ttpci-01.fw-2622 Firmware 01.2622
+
+The files are named dvb-ttpci-VV.fw-vvvv
+
+  VV : Version of firmware-to-host API. You can simply upgrade
+       the firmware binary with a newer one of the same API
+       version without changing anything else in the driver.
+  vvvv: Firmware version. Increased with each functional change.
+
+It is recommended that you use the newest firmware binary
+compatible with your driver. If you use the hotplug firmware loader
+in Linux 2.6 you must put the firmware file in
+/lib/firmware/dvb-ttpci-01.fw (in previous versions of the Linux
+hotplug scripts it was /usr/lib/hotplug/firmware/dvb-ttpci-01.fw).
+
+Boot.S is the source for the boot loader which is included
+as a binary blob in the bootcode array in av7110_hw.c in
+the Linux driver source. For more information check the
+driver tarball at http://www.metzlerbros.org/dvb/.
+
+                              7. Terratec devices
+
+   dvb-usb-terratec-h5-drxk.fw   Terratec H5
+   dvb-usb-terratec-h7-drxk.fw   Terratec H7 DRX-K
+   dvb-usb-terratec-h7-az6007.fw Terratec H7 az6007
+
+TERRATEC grants permission to use and redistribute these firmware
+files for use with TERRATEC devices, but not as part of the Linux
+kernel or in any other form which would require these files themselves
+to be covered by the terms of the GNU General Public License.
+
+These firmware files are distributed in the hope that they will be
+useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+                            8. Trident drx-j devices
+
+   dvb-fe-drxj-mc-1.0.8.fw         DRX-J main firmware
+   dvb-fe-drxj-mc-vsb-1.0.8.fw     DRX-J VSB firmware - currently not used by
+                                   the drx39xyj driver
+   dvb-fe-drxj-mc-vsb-qam-1.0.8.fw DRX-J QAM firmware - currently not used
+                                   by the drx39xyj driver
+
+  Firmwares were extracted from the source code tables, with the
+  following Copyright:
+
+  Copyright (c), 2004-2005,2007-2010 Trident Microsystems, Inc.
+  All rights reserved.
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
+
+  * Redistributions of source code must retain the above copyright notice,
+    this list of conditions and the following disclaimer.
+  * Redistributions in binary form must reproduce the above copyright notice,
+    this list of conditions and the following disclaimer in the documentation
+        and/or other materials provided with the distribution.
+  * Neither the name of Trident Microsystems nor Hauppauge Computer Works
+    nor the names of its contributors may be used to endorse or promote
+        products derived from this software without specific prior written
+        permission.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+  POSSIBILITY OF SUCH DAMAGE.
+
+                               9. Abilis devices
+
+   as102_data1_st.hex Abilis as102 data 1 firmware
+   as102_data2_st.hex Abilis as102 data 2 firmware
+
+The USB firmware files "dvb-as102_data1_st.hex" and "as102_data2_st.hex" for
+Abilis's AS10X, used together with the AS10X USB Kernel driver, is provided
+under the following licensing terms:
+
+Copyright (c) 2010, Abilis Systems Sarl
+
+Permission to use, copy, modify, and/or distribute this software for
+any purpose with or without fee is hereby granted, provided that the
+above copyright notice and this permission notice appear in all
+copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
+WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+TORTUOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+PERFORMANCE OF THIS SOFTWARE.
+
+                                10. ITE devices
+
+   dvb-usb-it9135-01.fw ITE it9135 Ax firmware
+   dvb-usb-it9135-02.fw ITE it9135 Bx firmware
+
+Copyright (c) 2014, ITE Tech. Inc.
+
+The firmware files "dvb-usb-it9135-01.fw" and "dvb-usb-it9135-02.fw"
+are for ITEtech it9135 Ax and Bx chip versions.
+
+Permission to use, copy, modify, and/or distribute this software for
+any purpose with or without fee is hereby granted, provided that the
+above copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE
+FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY
+DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
+WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,
+ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
+SOFTWARE.
+
+                               11. Siano devices
+
+   sms1xxx-stellar-dvbt-01.fw    Stellar DVB-T firmware
+   sms1xxx-nova-a-dvbt-01.fw     Nova-A DVB-T firmware
+   sms1xxx-nova-b-dvbt-01.fw     Nova-B DVB-T firmware
+   sms1xxx-hcw-55xxx-isdbt-02.fw ISDB-T firmware for Hauppauge 55xxx
+                                 devices
+   sms1xxx-hcw-55xxx-dvbt-02.fw  DVB-T firmware for Hauppauge 55xxx devices
+   tdmb_nova_12mhz.inp           Nova 12mhz T-DMB firmware
+   isdbt_rio.inp                 Rio ISDB-T firmware
+   isdbt_nova_12mhz.inp          Nova 12mhz ISDB-T firmware
+   isdbt_nova_12mhz_b0.inp       Nova-B 12mhz ISDB-T firmware
+   dvb_nova_12mhz.inp            Nova 12mhz DVB-T firmware
+   dvb_nova_12mhz_b0.inp         Nova-B 12mhz DVB-T firmware
+   cmmb_venice_12mhz.inp         Venice 12mhz CMMB firmware
+   cmmb_vega_12mhz.inp           Vega 12mhz CMMB firmware
+
+FIRMWARE LICENSE TERMS
+
+Copyright (c) Siano Mobile Silicon Ltd.
+All rights reserved.
+
+Redistribution. Redistribution and use in binary form, without
+modification, are permitted provided that the following conditions are
+met:
+
+* Redistributions must reproduce the above copyright notice and the
+following disclaimer in the documentation and/or other materials
+provided with the distribution.
+
+* Neither the name of Siano Mobile Silicon Ltd. nor the names of its
+suppliers may be used to endorse or promote products derived from this
+software without specific prior written permission.
+
+* No reverse engineering, decompilation, or disassembly of this software
+is permitted.
+
+DISCLAIMER. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE
+
+                        Tarball with all above firmwares
+
+   A tarball with all the above firmwares is available at:
+   dvb-firmwares.tar.bz2
+
+                                    Changes:
+
+2014-11-25 cmmb_vega_12mhz.inp cmmb_venice_12mhz.inp dvb_nova_12mhz_b0.inp dvb_n
+ova_12mhz.inp isdbt_nova_12mhz_b0.inp isdbt_nova_12mhz.inp isdbt_rio.inp sms1xxx
+-hcw-55xxx-dvbt-02.fw sms1xxx-hcw-55xxx-isdbt-02.fw sms1xxx-nova-a-dvbt-01.fw sm
+s1xxx-nova-b-dvbt-01.fw sms1xxx-stellar-dvbt-01.fw tdmb_nova_12mhz.inp
+        Changes by Mauro Carvalho Chehab:
+        - Added firmware files for Siano devices.
+
+2014-08-31 dvb-fe-xc4000-1.4.1.fw dvb-fe-xc5000c-4.1.30.7.fw dvb-usb-it9135-01.f
+w dvb-usb-it9135-02.fw as102_data1_st.hex as102_data2_st.hex
+        Changes by Mauro Carvalho Chehab:
+        - Added firmware files for xc4000, xc5000c, it9135 and as102
+        - Renamed v4l-cx23885-enc.fw to v4l-cx23885-enc-broken.fw, as
+          this firmware is reported to not work.
+
+2014-01-19 dvb-fe-drxj-mc-1.0.8.fw dvb-fe-drxj-mc-vsb-1.0.8.fw dvb-fe-drxj-mc-vs
+b-qam-1.0.8.fw
+        Changes by Mauro Carvalho Chehab:
+        - Added firmware files for DRX-J
+
+2011-08-02 dvb-usb-terratec-h7-drxk.fw dvb-usb-terratec-h7-az6007.fw
+        Changes by Mauro Carvalho Chehab:
+        - Added firmware files For Terratec H5, Thanks to Terratec
+          for getting us permission for usage.
+
+2011-07-11 dvb-usb-terratec-h5-drxk.fw
+        Changes by Mauro Carvalho Chehab:
+        - Added firmware file For Terratec H5 DRX-K, Thanks to Terratec
+          for getting us permission for usage.
+
+2009-07-01 dvb-fe-xc5000-1.6.114.fw
+        Changes by Mauro Carvalho Chehab:
+        - Added firmware files for xc5000, thanks to Devin Heitmueller for
+          getting manufacturer's permission
+
+2009-03-23 v4l-cx23418-apu.fw v4l-cx23418-cpu.fw v4l-cx23418-dig.fw v4l-cx23885-
+enc.fw v4l-cx23885-avcore-01.fw v4l-cx25840.fw
+        Changes by Mauro Carvalho Chehab:
+        - Added firmware files for several Conexant devices
+        - Added the permission for Conexant firmwares
+
+2009-03-19 v4l-cx231xx-avcore-01.fw
+        Changes by Mauro Carvalho Chehab:
+        - Added firmware file for cx231xx USB devices
+
+2005-11-23 dvb-ttpci-01.fw-2622
+        Changes by Werner Fink:
+         - AC3 output for live channels
+         - audio and PES filter error handling fixes
+         - tons of changes for better/faster A/V sync and PCR handling
+         - Initial implementation for ES/RAW audio support
+        Changes by Oliver Endriss:
+          - support for extended RC5 (aka RC5+) infrared protocol
+          - fixed DPRAM timing to get rid of strange pseudo-handshake
+
+2005-07-06 dvb-ttpci-01.fw-261f
+        Changes by Werner Fink:
+          Restart error IRQ handler in case of an overflow as
+          described in the API manual.
+          Better auto detection of PES formats with AC3 and DTS frames not
+          starting with the payload of PES frames with PTS value.
+
+          Allow non aligned PES frames which include a substream ID for
+          PCM/AC3/DTS.
+
+          Use silent PCM for delay the PCM/AC3/DTS data to be able to
+          compensate the PTS offset of Audio and Video PES frames.  Mainly
+          done to be able to synchronize even within VDR transfer mode
+          where AV data are received just in time from the TV channel.
+
+          Calculate  the byte rate of Mpeg Audio date to be able to
+          synchronize without an hard offset.  This avoid jumps within
+          picture sequence due high PTS offsets at synching time. Also use
+          the sync API for Mpeg Audio at startup.
+
+          Add PTS reset after a PCM Bypass to be able to recover fast
+          enough and shorten the time used in the blank timer for
+          recovering.
+
+          Be sure that the Bits in the message status register are done
+          well.  Add two new bits which indicates play mode and stop spare
+          time.
+
+          Make ReleaseBmp work even during running Bitmap upload.  Be sure
+          that normal OSD command sequences will not destroxed by a normal
+          ReleaseBmp.  Be sure that the ACK to the PC work even if the
+          Bitmap upload is premature aborted.
+
+          Add a workaround to be sure that TX_BUFF is really reset by the
+          PC and does not provide the old value.  It seems that modifying
+          of IRQ_RX by the PC is not always in sync.
+
+2005-xx-xx dvb-ttpci-01.fw-261e
+           (not officially released)
+
+2004-12-26 dvb-ttpci-01.fw-261d
+        Changes by Werner Fink:
+        - Implement AC3/DTS replay capability
+        - Proper handling of OSD bitmap loading with timeouts
+        - Set interpolated option of video decoder to reduce block
+          noise on hard picture changes
+        - FlushTS command fixes
+
+2004-06-10 dvb-ttpci-01.fw-261c
+        - now using additional 2MB SDRAM for OSD if present
+          (support for VDR-oriented hardware patch)
+        - remove boot splash
+
+2003-10-13 dvb-ttpci-01.fw-261b
+        fixed distortions when switching channel while recording
+
+2003-07-09 dvb-ttpci-01.fw-261a

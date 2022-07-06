@@ -1,0 +1,345 @@
+diff --git a/arch/x86/kernel/irq.c b/arch/x86/kernel/irq.c
+index 766ffe3ba313..b76f4d73a47c 100644
+--- a/arch/x86/kernel/irq.c
++++ b/arch/x86/kernel/irq.c
+@@ -12,6 +12,7 @@
+ #include <linux/delay.h>
+ #include <linux/export.h>
+ #include <linux/irq.h>
++#include <linux/kcov.h>
+ 
+ #include <asm/irq_stack.h>
+ #include <asm/apic.h>
+@@ -245,6 +246,7 @@ DEFINE_IDTENTRY_IRQ(common_interrupt)
+ 	/* entry code tells RCU that we're not quiescent.  Check it. */
+ 	RCU_LOCKDEP_WARN(!rcu_is_watching(), "IRQ failed to wake up RCU");
+ 
++	kcov_remote_start_common(0x1);
+ 	desc = __this_cpu_read(vector_irq[vector]);
+ 	if (likely(!IS_ERR_OR_NULL(desc))) {
+ 		handle_irq(desc, regs);
+@@ -259,6 +261,7 @@ DEFINE_IDTENTRY_IRQ(common_interrupt)
+ 			__this_cpu_write(vector_irq[vector], VECTOR_UNUSED);
+ 		}
+ 	}
++	kcov_remote_stop();
+ 
+ 	set_irq_regs(old_regs);
+ }
+diff --git a/drivers/Makefile b/drivers/Makefile
+index 020780b6b4d2..636e6a5a95f9 100644
+--- a/drivers/Makefile
++++ b/drivers/Makefile
+@@ -5,6 +5,7 @@
+ # 15 Sep 2000, Christoph Hellwig <hch@infradead.org>
+ # Rewritten to use lists instead of if-statements.
+ #
++subdir-ccflags-y += $(CFLAGS_KCOV)
+ 
+ obj-y				+= irqchip/
+ obj-y				+= bus/
+diff --git a/drivers/misc/Kconfig b/drivers/misc/Kconfig
+index 41d2bb0ae23a..e42239e36204 100644
+--- a/drivers/misc/Kconfig
++++ b/drivers/misc/Kconfig
+@@ -5,6 +5,9 @@
+ 
+ menu "Misc devices"
+ 
++config PRINT_FUZZ
++	tristate "Kernel Module to assist fuzzing"
++
+ config SENSORS_LIS3LV02D
+ 	tristate
+ 	depends on INPUT
+diff --git a/drivers/misc/Makefile b/drivers/misc/Makefile
+index 70e800e9127f..99939f4b1ce0 100644
+--- a/drivers/misc/Makefile
++++ b/drivers/misc/Makefile
+@@ -3,6 +3,7 @@
+ # Makefile for misc devices that really don't fit anywhere else.
+ #
+ 
++obj-$(CONFIG_PRINT_FUZZ)	+= print_fuzz.o
+ obj-$(CONFIG_IBM_ASM)		+= ibmasm/
+ obj-$(CONFIG_IBMVMC)		+= ibmvmc.o
+ obj-$(CONFIG_AD525X_DPOT)	+= ad525x_dpot.o
+diff --git a/drivers/misc/print_fuzz.c b/drivers/misc/print_fuzz.c
+new file mode 100644
+index 000000000000..23660a591a2c
+--- /dev/null
++++ b/drivers/misc/print_fuzz.c
+@@ -0,0 +1,91 @@
++#include "linux/device/class.h"
++#include "linux/export.h"
++#include "linux/uaccess.h"
++#include <linux/module.h>
++#include <linux/kernel.h>
++#include <linux/fs.h>
++#include <linux/init.h>
++#include <linux/delay.h>
++#include <linux/cdev.h>
++#include <uapi/linux/kvm_para.h>
++
++#define DEVICE_NAME "print_fuzz"
++
++#define BUF_LEN		0x400
++#define DMA_BUF_LEN	0x10000
++
++#define INTERRUPT		_IO(0x68, 0) 
++#define PREPARE_DATA	_IO(0x68, 1) 
++
++static int dev_major = 0;
++static struct class* print_fuzz_class = NULL;
++
++typedef struct print_fuzz_data {
++	struct cdev cdev;
++}print_fuzz_data;
++static print_fuzz_data print_fuzz_driver_data;
++
++typedef struct fuzz_input {
++	char register_data[BUF_LEN];
++	char dma_data[DMA_BUF_LEN];
++}fuzz_input;
++static fuzz_input fuzz_driver_input;
++
++static int print_fuzz_open(struct inode *inode, struct file *file) {
++	return 0;
++}
++
++static long print_fuzz_ioctl(struct file *file, unsigned int cmd, unsigned long arg) {
++	int ret;
++	char device_name[BUF_LEN];
++
++	switch (cmd) {
++		case INTERRUPT:
++			ret = copy_from_user(device_name, (char __user *)arg, BUF_LEN);
++			if (ret < 0)
++				return -EINVAL;
++			kvm_hypercall1(KVM_HC_INTERRUPT, (unsigned long)device_name);
++			break;
++		case PREPARE_DATA:
++			ret = copy_from_user(&fuzz_driver_input, (char __user *)arg, sizeof(fuzz_input));
++			if (ret < 0) {
++				kvm_hypercall2(KVM_HC_PREPARE_DATA, -1, -1);
++				return -EINVAL;
++			}
++			kvm_hypercall2(KVM_HC_PREPARE_DATA, (unsigned long)fuzz_driver_input.register_data, 
++					(unsigned long)fuzz_driver_input.dma_data);
++			break;
++		default:
++			printk(KERN_DEBUG "Unknown ioctl.\n");
++	}
++
++	return 0;
++}
++
++static struct file_operations print_fuzz_ops = {
++	.owner	= THIS_MODULE,
++	.open	= print_fuzz_open,
++	.unlocked_ioctl	= print_fuzz_ioctl,
++};
++
++static int __init print_fuzz_init(void) {
++	dev_t dev;
++
++	alloc_chrdev_region(&dev, 0, 1, DEVICE_NAME);
++	dev_major = MAJOR(dev);
++	print_fuzz_class = class_create(THIS_MODULE, DEVICE_NAME);
++	cdev_init(&print_fuzz_driver_data.cdev, &print_fuzz_ops);
++	print_fuzz_driver_data.cdev.owner = THIS_MODULE;
++	cdev_add(&print_fuzz_driver_data.cdev, MKDEV(dev_major, 0), 1);
++	device_create(print_fuzz_class, NULL, MKDEV(dev_major, 0), NULL, DEVICE_NAME);
++
++	return 0;
++}
++
++static void __exit print_fuzz_exit(void) {
++}
++
++module_init(print_fuzz_init);
++module_exit(print_fuzz_exit);
++
++MODULE_LICENSE("GPL");
+diff --git a/drivers/pci/pci-driver.c b/drivers/pci/pci-driver.c
+index 4ceeb75fc899..3b254176aba6 100644
+--- a/drivers/pci/pci-driver.c
++++ b/drivers/pci/pci-driver.c
+@@ -4,6 +4,8 @@
+  * (C) Copyright 2007 Novell Inc.
+  */
+ 
++#include "asm/kvm_para.h"
++#include "linux/kcov.h"
+ #include <linux/pci.h>
+ #include <linux/module.h>
+ #include <linux/init.h>
+@@ -320,7 +322,10 @@ static long local_pci_probe(void *_ddi)
+ 	 */
+ 	pm_runtime_get_sync(dev);
+ 	pci_dev->driver = pci_drv;
++	kvm_hypercall2(KVM_HC_PCI_CONFIG, pci_dev->bus->number, pci_dev->devfn);
++	kcov_remote_start_common(0x1);
+ 	rc = pci_drv->probe(pci_dev, ddi->id);
++	kcov_remote_stop();
+ 	if (!rc)
+ 		return rc;
+ 	if (rc < 0) {
+diff --git a/include/linux/dma-mapping.h b/include/linux/dma-mapping.h
+index dca2b1355bb1..1bb67d2be3e9 100644
+--- a/include/linux/dma-mapping.h
++++ b/include/linux/dma-mapping.h
+@@ -10,6 +10,7 @@
+ #include <linux/scatterlist.h>
+ #include <linux/bug.h>
+ #include <linux/mem_encrypt.h>
++#include <uapi/linux/kvm_para.h>
+ 
+ /**
+  * List of possible attributes associated with a DMA mapping. The semantics
+@@ -415,8 +416,9 @@ static inline void dma_sync_sgtable_for_device(struct device *dev,
+ static inline void *dma_alloc_coherent(struct device *dev, size_t size,
+ 		dma_addr_t *dma_handle, gfp_t gfp)
+ {
+-	return dma_alloc_attrs(dev, size, dma_handle, gfp,
+-			(gfp & __GFP_NOWARN) ? DMA_ATTR_NO_WARN : 0);
++	void *dma_pointer = dma_alloc_attrs(dev, size, dma_handle, gfp, (gfp & __GFP_NOWARN) ? DMA_ATTR_NO_WARN : 0);
++	kvm_hypercall2(KVM_HC_ALLOC_DMA, (unsigned long)size, (unsigned long)*dma_handle);
++	return dma_pointer;
+ }
+ 
+ static inline void dma_free_coherent(struct device *dev, size_t size,
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index d5e3c00b74e1..ded8129d3e03 100644
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -1408,6 +1408,8 @@ struct task_struct {
+ 
+ 	/* Collect coverage from softirq context: */
+ 	unsigned int			kcov_softirq;
++
++	unsigned int 			kcov_hardirq;
+ #endif
+ 
+ #ifdef CONFIG_MEMCG
+diff --git a/include/uapi/linux/kvm_para.h b/include/uapi/linux/kvm_para.h
+index 960c7e93d1a9..c91897c06639 100644
+--- a/include/uapi/linux/kvm_para.h
++++ b/include/uapi/linux/kvm_para.h
+@@ -31,6 +31,11 @@
+ #define KVM_HC_SCHED_YIELD		11
+ #define KVM_HC_MAP_GPA_RANGE		12
+ 
++#define KVM_HC_INTERRUPT    20
++#define KVM_HC_PREPARE_DATA 21
++#define KVM_HC_ALLOC_DMA    22
++#define KVM_HC_PCI_CONFIG   23
++
+ /*
+  * hypercalls use architecture specific
+  */
+diff --git a/kernel/kcov.c b/kernel/kcov.c
+index 475524bd900a..12875d06db97 100644
+--- a/kernel/kcov.c
++++ b/kernel/kcov.c
+@@ -1,5 +1,5 @@
+ // SPDX-License-Identifier: GPL-2.0
+-#define pr_fmt(fmt) "kcov: " fmt
++#include "linux/irqflags.h"
+ 
+ #define DISABLE_BRANCH_PROFILING
+ #include <linux/atomic.h>
+@@ -163,7 +163,9 @@ static notrace bool check_kcov_mode(enum kcov_mode needed_mode, struct task_stru
+ 	 * so we ignore code executed in interrupts, unless we are in a remote
+ 	 * coverage collection section in a softirq.
+ 	 */
+-	if (!in_task() && !(in_serving_softirq() && t->kcov_softirq))
++	// if (!in_task() && !(in_serving_softirq() && t->kcov_softirq))
++	if (!in_task() && !(in_serving_softirq() && t->kcov_softirq) &&
++			!(in_irq() && t->kcov_hardirq))
+ 		return false;
+ 	mode = READ_ONCE(t->kcov_mode);
+ 	/*
+@@ -826,7 +828,8 @@ void kcov_remote_start(u64 handle)
+ 
+ 	if (WARN_ON(!kcov_check_handle(handle, true, true, true)))
+ 		return;
+-	if (!in_task() && !in_serving_softirq())
++	// if (!in_task() && !in_serving_softirq())
++	if (!in_task() && !in_serving_softirq() && !in_irq())
+ 		return;
+ 
+ 	local_lock_irqsave(&kcov_percpu_data.lock, flags);
+@@ -850,6 +853,11 @@ void kcov_remote_start(u64 handle)
+ 		return;
+ 	}
+ 
++	if (WARN_ON(in_irq() && t->kcov_hardirq)) {
++		local_irq_restore(flags);
++		return;
++	}
++
+ 	spin_lock(&kcov_remote_lock);
+ 	remote = kcov_remote_find(handle);
+ 	if (!remote) {
+@@ -895,6 +903,10 @@ void kcov_remote_start(u64 handle)
+ 		kcov_remote_softirq_start(t);
+ 		t->kcov_softirq = 1;
+ 	}
++	if (in_irq()) {
++		kcov_remote_softirq_start(t);
++		t->kcov_hardirq = 1;
++	}
+ 	kcov_start(t, kcov, size, area, mode, sequence);
+ 
+ 	local_unlock_irqrestore(&kcov_percpu_data.lock, flags);
+@@ -968,7 +980,8 @@ void kcov_remote_stop(void)
+ 	int sequence;
+ 	unsigned long flags;
+ 
+-	if (!in_task() && !in_serving_softirq())
++	// if (!in_task() && !in_serving_softirq())
++	if (!in_task() && !in_serving_softirq() && !in_irq())
+ 		return;
+ 
+ 	local_lock_irqsave(&kcov_percpu_data.lock, flags);
+@@ -993,6 +1006,16 @@ void kcov_remote_stop(void)
+ 		return;
+ 	}
+ 
++	if (in_serving_softirq() && !t->kcov_hardirq) {
++		local_irq_restore(flags);
++		return;
++	}
++
++	if (WARN_ON(!in_irq() && t->kcov_hardirq)) {
++		local_irq_restore(flags);
++		return;
++	}
++
+ 	kcov = t->kcov;
+ 	area = t->kcov_area;
+ 	size = t->kcov_size;
+@@ -1003,6 +1026,10 @@ void kcov_remote_stop(void)
+ 		t->kcov_softirq = 0;
+ 		kcov_remote_softirq_stop(t);
+ 	}
++	if (in_irq()) {
++		t->kcov_hardirq = 0;
++		kcov_remote_softirq_stop(t);
++	}
+ 
+ 	spin_lock(&kcov->lock);
+ 	/*
+diff --git a/sound/Makefile b/sound/Makefile
+index 04ef04b1168f..c7ad3307fac0 100644
+--- a/sound/Makefile
++++ b/sound/Makefile
+@@ -1,6 +1,7 @@
+ # SPDX-License-Identifier: GPL-2.0
+ # Makefile for the Linux sound card driver
+ #
++subdir-ccflags-y += $(CFLAGS_KCOV)
+ 
+ obj-$(CONFIG_SOUND) += soundcore.o
+ obj-$(CONFIG_DMASOUND) += oss/dmasound/

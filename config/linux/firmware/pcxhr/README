@@ -1,0 +1,13 @@
+GENRAL
+======
+
+This directory contains the firmware data files for pcxhrloader
+utility in alsa-tools package.  Install this with the same prefix
+option as you used for alsa-tools.
+
+
+COPYRIGHT
+=========
+
+Copyright (c) 2004 Digigram SA <alsa@digigram.com>
+Distributable under GPL.

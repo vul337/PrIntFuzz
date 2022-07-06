@@ -1,0 +1,1226 @@
+{
+    "i82801b11-bridge": {
+        "vendor_id": "0x8086",
+        "device_id": "0x244e",
+        "revision": "0x92",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x0",
+        "driver": "None"
+    },
+    "igd-passthrough-isa-bridge": {
+        "vendor_id": "0x8086",
+        "device_id": "0x0",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x601",
+        "driver": "None"
+    },
+    "ioh3420": {
+        "vendor_id": "0x8086",
+        "device_id": "0x3420",
+        "revision": "0x2",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x0",
+        "driver": "pcieport"
+    },
+    "pci-bridge": {
+        "vendor_id": "0x1b36",
+        "device_id": "0x1",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x604",
+        "driver": "None"
+    },
+    "pci-bridge-seat": {
+        "vendor_id": "0x1b36",
+        "device_id": "0xa",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x604",
+        "driver": "None"
+    },
+    "pcie-pci-bridge": {
+        "vendor_id": "0x1b36",
+        "device_id": "0xe",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x0",
+        "driver": "None"
+    },
+    "pcie-root-port": {
+        "vendor_id": "0x1b36",
+        "device_id": "0xc",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x0",
+        "driver": "pcieport"
+    },
+    "pxb": {
+        "vendor_id": "0x1b36",
+        "device_id": "0x9",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x600",
+        "driver": "None"
+    },
+    "pxb-pcie": {
+        "vendor_id": "0x1b36",
+        "device_id": "0xb",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x600",
+        "driver": "None"
+    },
+    "vfio-pci-igd-lpc-bridge": {
+        "vendor_id": "0x0",
+        "device_id": "0x0",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x601",
+        "driver": "None"
+    },
+    "x3130-upstream": {
+        "vendor_id": "0x104c",
+        "device_id": "0x8232",
+        "revision": "0x2",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x0",
+        "driver": "pcieport"
+    },
+    "xio3130-downstream": {
+        "vendor_id": "0x104c",
+        "device_id": "0x8233",
+        "revision": "0x1",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x0",
+        "driver": "pcieport"
+    },
+    "ich9-usb-ehci1": {
+        "vendor_id": "0x8086",
+        "device_id": "0x293a",
+        "revision": "0x3",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0xc03",
+        "driver": "ehci-pci"
+    },
+    "ich9-usb-ehci2": {
+        "vendor_id": "0x8086",
+        "device_id": "0x293c",
+        "revision": "0x3",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0xc03",
+        "driver": "ehci-pci"
+    },
+    "ich9-usb-uhci1": {
+        "vendor_id": "0x8086",
+        "device_id": "0x2934",
+        "revision": "0x3",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0xc03",
+        "driver": "uhci_hcd"
+    },
+    "ich9-usb-uhci2": {
+        "vendor_id": "0x8086",
+        "device_id": "0x2935",
+        "revision": "0x3",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0xc03",
+        "driver": "uhci_hcd"
+    },
+    "ich9-usb-uhci3": {
+        "vendor_id": "0x8086",
+        "device_id": "0x2936",
+        "revision": "0x3",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0xc03",
+        "driver": "uhci_hcd"
+    },
+    "ich9-usb-uhci4": {
+        "vendor_id": "0x8086",
+        "device_id": "0x2937",
+        "revision": "0x3",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0xc03",
+        "driver": "uhci_hcd"
+    },
+    "ich9-usb-uhci5": {
+        "vendor_id": "0x8086",
+        "device_id": "0x2938",
+        "revision": "0x3",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0xc03",
+        "driver": "uhci_hcd"
+    },
+    "ich9-usb-uhci6": {
+        "vendor_id": "0x8086",
+        "device_id": "0x2939",
+        "revision": "0x3",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0xc03",
+        "driver": "uhci_hcd"
+    },
+    "nec-usb-xhci": {
+        "vendor_id": "0x1033",
+        "device_id": "0x194",
+        "revision": "0x3",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0xc03",
+        "driver": "xhci_hcd"
+    },
+    "pci-ohci": {
+        "vendor_id": "0x106b",
+        "device_id": "0x3f",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0xc03",
+        "driver": "ohci-pci"
+    },
+    "piix3-usb-uhci": {
+        "vendor_id": "0x8086",
+        "device_id": "0x7020",
+        "revision": "0x1",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0xc03",
+        "driver": "uhci_hcd"
+    },
+    "piix4-usb-uhci": {
+        "vendor_id": "0x8086",
+        "device_id": "0x7112",
+        "revision": "0x1",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0xc03",
+        "driver": "uhci_hcd"
+    },
+    "qemu-xhci": {
+        "vendor_id": "0x1b36",
+        "device_id": "0xd",
+        "revision": "0x1",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0xc03",
+        "driver": "xhci_hcd"
+    },
+    "usb-ehci": {
+        "vendor_id": "0x8086",
+        "device_id": "0x24cd",
+        "revision": "0x10",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0xc03",
+        "driver": "ehci-pci"
+    },
+    "vt82c686b-usb-uhci": {
+        "vendor_id": "0x1106",
+        "device_id": "0x3038",
+        "revision": "0x1",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0xc03",
+        "driver": "uhci_hcd"
+    },
+    "am53c974": {
+        "vendor_id": "0x1022",
+        "device_id": "0x2020",
+        "revision": "0x10",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x100",
+        "driver": "am53c974"
+    },
+    "dc390": {
+        "vendor_id": "0x1022",
+        "device_id": "0x2020",
+        "revision": "0x10",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x100",
+        "driver": "am53c974"
+    },
+    "ich9-ahci": {
+        "vendor_id": "0x8086",
+        "device_id": "0x2922",
+        "revision": "0x2",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x106",
+        "driver": "ahci"
+    },
+    "lsi53c810": {
+        "vendor_id": "0x1000",
+        "device_id": "0x1",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x1000",
+        "class_id": "0x100",
+        "driver": "sym53c8xx"
+    },
+    "lsi53c895a": {
+        "vendor_id": "0x1000",
+        "device_id": "0x12",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x1000",
+        "class_id": "0x100",
+        "driver": "sym53c8xx"
+    },
+    "megasas": {
+        "vendor_id": "0x1000",
+        "device_id": "0x60",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x1000",
+        "subsystem_id": "0x1013",
+        "class_id": "0x104",
+        "driver": "megaraid_sas"
+    },
+    "megasas-gen2": {
+        "vendor_id": "0x1000",
+        "device_id": "0x79",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x1000",
+        "subsystem_id": "0x9261",
+        "class_id": "0x104",
+        "driver": "megaraid_sas"
+    },
+    "mptsas1068": {
+        "vendor_id": "0x1000",
+        "device_id": "0x54",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x1000",
+        "subsystem_id": "0x8000",
+        "class_id": "0x100",
+        "driver": "mptsas"
+    },
+    "nvme": {
+        "vendor_id": "0x8086",
+        "device_id": "0x5845",
+        "revision": "0x2",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x108",
+        "driver": "None"
+    },
+    "piix3-ide": {
+        "vendor_id": "0x8086",
+        "device_id": "0x7010",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x101",
+        "driver": "ata_piix"
+    },
+    "piix3-ide-xen": {
+        "vendor_id": "0x8086",
+        "device_id": "0x7010",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x101",
+        "driver": "ata_piix"
+    },
+    "piix4-ide": {
+        "vendor_id": "0x8086",
+        "device_id": "0x7111",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x101",
+        "driver": "ata_piix"
+    },
+    "pvscsi": {
+        "vendor_id": "0x15ad",
+        "device_id": "0x7c0",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x1000",
+        "class_id": "0x100",
+        "driver": "vmw_pvscsi"
+    },
+    "sdhci-pci": {
+        "vendor_id": "0x1b36",
+        "device_id": "0x7",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x805",
+        "driver": "sdhci-pci"
+    },
+    "vhost-scsi-pci": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x1004",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x100",
+        "driver": "None"
+    },
+    "vhost-scsi-pci-non-transitional": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x1004",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x100",
+        "driver": "None"
+    },
+    "vhost-scsi-pci-transitional": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x1004",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x100",
+        "driver": "None"
+    },
+    "vhost-user-blk-pci": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x1001",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x100",
+        "driver": "None"
+    },
+    "vhost-user-blk-pci-non-transitional": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x1001",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x100",
+        "driver": "None"
+    },
+    "vhost-user-blk-pci-transitional": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x1001",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x100",
+        "driver": "None"
+    },
+    "vhost-user-fs-pci": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x0",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x180",
+        "driver": "None"
+    },
+    "vhost-user-scsi-pci": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x1004",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x100",
+        "driver": "None"
+    },
+    "vhost-user-scsi-pci-non-transitional": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x1004",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x100",
+        "driver": "None"
+    },
+    "vhost-user-scsi-pci-transitional": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x1004",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x100",
+        "driver": "None"
+    },
+    "virtio-9p-pci": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x1009",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x2",
+        "driver": "None"
+    },
+    "virtio-9p-pci-non-transitional": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x1009",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x2",
+        "driver": "None"
+    },
+    "virtio-9p-pci-transitional": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x1009",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x2",
+        "driver": "None"
+    },
+    "virtio-blk-pci": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x1001",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x100",
+        "driver": "None"
+    },
+    "virtio-blk-pci-non-transitional": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x1001",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x100",
+        "driver": "None"
+    },
+    "virtio-blk-pci-transitional": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x1001",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x100",
+        "driver": "None"
+    },
+    "virtio-scsi-pci": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x1004",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x100",
+        "driver": "virtio-pci"
+    },
+    "virtio-scsi-pci-non-transitional": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x1004",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x100",
+        "driver": "virtio-pci"
+    },
+    "virtio-scsi-pci-transitional": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x1004",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x100",
+        "driver": "virtio-pci"
+    },
+    "e1000": {
+        "vendor_id": "0x8086",
+        "device_id": "0x100e",
+        "revision": "0x3",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x200",
+        "driver": "e1000"
+    },
+    "e1000-82544gc": {
+        "vendor_id": "0x8086",
+        "device_id": "0x100c",
+        "revision": "0x3",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x200",
+        "driver": "e1000"
+    },
+    "e1000-82545em": {
+        "vendor_id": "0x8086",
+        "device_id": "0x100f",
+        "revision": "0x3",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x200",
+        "driver": "e1000"
+    },
+    "e1000e": {
+        "vendor_id": "0x8086",
+        "device_id": "0x10d3",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x200",
+        "driver": "e1000e"
+    },
+    "i82550": {
+        "vendor_id": "0x8086",
+        "device_id": "0x1209",
+        "revision": "0xe",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x200",
+        "driver": "e100"
+    },
+    "i82551": {
+        "vendor_id": "0x8086",
+        "device_id": "0x1209",
+        "revision": "0xf",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x200",
+        "driver": "e100"
+    },
+    "i82557a": {
+        "vendor_id": "0x8086",
+        "device_id": "0x1229",
+        "revision": "0x1",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x200",
+        "driver": "e100"
+    },
+    "i82557b": {
+        "vendor_id": "0x8086",
+        "device_id": "0x1229",
+        "revision": "0x2",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x200",
+        "driver": "e100"
+    },
+    "i82557c": {
+        "vendor_id": "0x8086",
+        "device_id": "0x1229",
+        "revision": "0x3",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x200",
+        "driver": "e100"
+    },
+    "i82558a": {
+        "vendor_id": "0x8086",
+        "device_id": "0x1229",
+        "revision": "0x4",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x200",
+        "driver": "e100"
+    },
+    "i82558b": {
+        "vendor_id": "0x8086",
+        "device_id": "0x1229",
+        "revision": "0x5",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x200",
+        "driver": "e100"
+    },
+    "i82559a": {
+        "vendor_id": "0x8086",
+        "device_id": "0x1229",
+        "revision": "0x6",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x200",
+        "driver": "e100"
+    },
+    "i82559b": {
+        "vendor_id": "0x8086",
+        "device_id": "0x1229",
+        "revision": "0x7",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x200",
+        "driver": "e100"
+    },
+    "i82559c": {
+        "vendor_id": "0x8086",
+        "device_id": "0x1229",
+        "revision": "0xc",
+        "subsystem_vendor_id": "0x8086",
+        "subsystem_id": "0x40",
+        "class_id": "0x200",
+        "driver": "e100"
+    },
+    "i82559er": {
+        "vendor_id": "0x8086",
+        "device_id": "0x1209",
+        "revision": "0x9",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x200",
+        "driver": "e100"
+    },
+    "i82562": {
+        "vendor_id": "0x8086",
+        "device_id": "0x1209",
+        "revision": "0xe",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x200",
+        "driver": "e100"
+    },
+    "i82801": {
+        "vendor_id": "0x8086",
+        "device_id": "0x2449",
+        "revision": "0x3",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x200",
+        "driver": "e100"
+    },
+    "ne2k_pci": {
+        "vendor_id": "0x10ec",
+        "device_id": "0x8029",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x200",
+        "driver": "ne2k-pci"
+    },
+    "pcnet": {
+        "vendor_id": "0x1022",
+        "device_id": "0x2000",
+        "revision": "0x10",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x200",
+        "driver": "pcnet32"
+    },
+    "rocker": {
+        "vendor_id": "0x1b36",
+        "device_id": "0x6",
+        "revision": "0x1",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x280",
+        "driver": "rocker"
+    },
+    "rtl8139": {
+        "vendor_id": "0x10ec",
+        "device_id": "0x8139",
+        "revision": "0x20",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x200",
+        "driver": "8139cp"
+    },
+    "tulip": {
+        "vendor_id": "0x1011",
+        "device_id": "0x19",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x103c",
+        "subsystem_id": "0x104f",
+        "class_id": "0x200",
+        "driver": "tulip"
+    },
+    "virtio-net-pci": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x1000",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x200",
+        "driver": "virtio-pci"
+    },
+    "virtio-net-pci-non-transitional": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x1000",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x200",
+        "driver": "virtio-pci"
+    },
+    "virtio-net-pci-transitional": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x1000",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x200",
+        "driver": "virtio-pci"
+    },
+    "vmxnet3": {
+        "vendor_id": "0x15ad",
+        "device_id": "0x7b0",
+        "revision": "0x1",
+        "subsystem_vendor_id": "0x15ad",
+        "subsystem_id": "0x7b0",
+        "class_id": "0x200",
+        "driver": "vmxnet3"
+    },
+    "pci-serial": {
+        "vendor_id": "0x1b36",
+        "device_id": "0x2",
+        "revision": "0x1",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x700",
+        "driver": "serial"
+    },
+    "pci-serial-2x": {
+        "vendor_id": "0x1b36",
+        "device_id": "0x3",
+        "revision": "0x1",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x700",
+        "driver": "serial"
+    },
+    "pci-serial-4x": {
+        "vendor_id": "0x1b36",
+        "device_id": "0x4",
+        "revision": "0x1",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x700",
+        "driver": "serial"
+    },
+    "tpci200": {
+        "vendor_id": "0x1498",
+        "device_id": "0x30c8",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x1498",
+        "subsystem_id": "0x300a",
+        "class_id": "0x680",
+        "driver": "tpci200"
+    },
+    "vhost-user-input-pci": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x0",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x980",
+        "driver": "None"
+    },
+    "virtio-input-host-pci": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x0",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x980",
+        "driver": "None"
+    },
+    "virtio-keyboard-pci": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x0",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x900",
+        "driver": "virtio-pci"
+    },
+    "virtio-mouse-pci": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x0",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x902",
+        "driver": "virtio-pci"
+    },
+    "virtio-serial-pci": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x1003",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x780",
+        "driver": "virtio-pci"
+    },
+    "virtio-serial-pci-non-transitional": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x1003",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x780",
+        "driver": "virtio-pci"
+    },
+    "virtio-serial-pci-transitional": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x1003",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x780",
+        "driver": "virtio-pci"
+    },
+    "virtio-tablet-pci": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x0",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x980",
+        "driver": "virtio-pci"
+    },
+    "ati-vga": {
+        "vendor_id": "0x1002",
+        "device_id": "0x5046",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x300",
+        "driver": "None"
+    },
+    "bochs-display": {
+        "vendor_id": "0x1234",
+        "device_id": "0x1111",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x380",
+        "driver": "bochs-drm"
+    },
+    "cirrus-vga": {
+        "vendor_id": "0x1013",
+        "device_id": "0xb8",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x300",
+        "driver": "None"
+    },
+    "secondary-vga": {
+        "vendor_id": "0x1234",
+        "device_id": "0x1111",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x380",
+        "driver": "bochs-drm"
+    },
+    "VGA": {
+        "vendor_id": "0x1234",
+        "device_id": "0x1111",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x300",
+        "driver": "None"
+    },
+    "vhost-user-gpu-pci": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x0",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x380",
+        "driver": "None"
+    },
+    "vhost-user-vga": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x0",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x300",
+        "driver": "None"
+    },
+    "virtio-gpu-pci": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x0",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x380",
+        "driver": "virtio-pci"
+    },
+    "virtio-vga": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x0",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x300",
+        "driver": "None"
+    },
+    "vmware-svga": {
+        "vendor_id": "0x15ad",
+        "device_id": "0x405",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x15ad",
+        "subsystem_id": "0x405",
+        "class_id": "0x300",
+        "driver": "None"
+    },
+    "AC97": {
+        "vendor_id": "0x8086",
+        "device_id": "0x2415",
+        "revision": "0x1",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x401",
+        "driver": "snd_intel8x0"
+    },
+    "ES1370": {
+        "vendor_id": "0x1274",
+        "device_id": "0x5000",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x4942",
+        "subsystem_id": "0x4c4c",
+        "class_id": "0x401",
+        "driver": "snd_ens1370"
+    },
+    "ich9-intel-hda": {
+        "vendor_id": "0x8086",
+        "device_id": "0x293e",
+        "revision": "0x3",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x403",
+        "driver": "snd_hda_intel"
+    },
+    "intel-hda": {
+        "vendor_id": "0x8086",
+        "device_id": "0x2668",
+        "revision": "0x1",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x403",
+        "driver": "snd_hda_intel"
+    },
+    "edu": {
+        "vendor_id": "0x1234",
+        "device_id": "0x11e8",
+        "revision": "0x10",
+        "subsystem_vendor_id": "0x11e9",
+        "subsystem_id": "0x11ea",
+        "class_id": "0xff",
+        "driver": "None"
+    },
+    "i6300esb": {
+        "vendor_id": "0x8086",
+        "device_id": "0x25ab",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x880",
+        "driver": "i6300ESB timer"
+    },
+    "ivshmem-doorbell": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x1110",
+        "revision": "0x1",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x500",
+        "driver": "None"
+    },
+    "ivshmem-plain": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x1110",
+        "revision": "0x1",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x500",
+        "driver": "None"
+    },
+    "kvaser_pci": {
+        "vendor_id": "0x10e8",
+        "device_id": "0x8406",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0xff00",
+        "driver": "None"
+    },
+    "mioe3680_pci": {
+        "vendor_id": "0x13fe",
+        "device_id": "0xc302",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x13fe",
+        "subsystem_id": "0xc302",
+        "class_id": "0xc09",
+        "driver": "None"
+    },
+    "pci-testdev": {
+        "vendor_id": "0x1b36",
+        "device_id": "0x5",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0xff",
+        "driver": "None"
+    },
+    "pcm3680_pci": {
+        "vendor_id": "0x13fe",
+        "device_id": "0xc002",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x13fe",
+        "subsystem_id": "0xc002",
+        "class_id": "0xc09",
+        "driver": "None"
+    },
+    "vfio-pci": {
+        "vendor_id": "0x0",
+        "device_id": "0x0",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x0",
+        "driver": "None"
+    },
+    "vfio-pci-nohotplug": {
+        "vendor_id": "0x0",
+        "device_id": "0x0",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x0",
+        "driver": "None"
+    },
+    "vhost-vsock-pci": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x1012",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x780",
+        "driver": "None"
+    },
+    "vhost-vsock-pci-non-transitional": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x1012",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x780",
+        "driver": "None"
+    },
+    "vhost-vsock-pci-transitional": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x1012",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x780",
+        "driver": "None"
+    },
+    "virtio-balloon-pci": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x1002",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0xff",
+        "driver": "virtio-pci"
+    },
+    "virtio-balloon-pci-non-transitional": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x1002",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0xff",
+        "driver": "virtio-pci"
+    },
+    "virtio-balloon-pci-transitional": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x1002",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0xff",
+        "driver": "virtio-pci"
+    },
+    "virtio-crypto-pci": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x0",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0xff",
+        "driver": "None"
+    },
+    "virtio-pmem-pci": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x1013",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0xff",
+        "driver": "None"
+    },
+    "virtio-rng-pci": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x1005",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0xff",
+        "driver": "virtio-pci"
+    },
+    "virtio-rng-pci-non-transitional": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x1005",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0xff",
+        "driver": "virtio-pci"
+    },
+    "virtio-rng-pci-transitional": {
+        "vendor_id": "0x1af4",
+        "device_id": "0x1005",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0xff",
+        "driver": "virtio-pci"
+    },
+    "AMDVI-PCI": {
+        "vendor_id": "0x0",
+        "device_id": "0x0",
+        "revision": "0x0",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0x0",
+        "driver": "None"
+    },
+    "pci-ipmi-bt": {
+        "vendor_id": "0x1234",
+        "device_id": "0x1112",
+        "revision": "0x1",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0xc07",
+        "driver": "None"
+    },
+    "pci-ipmi-kcs": {
+        "vendor_id": "0x1234",
+        "device_id": "0x1112",
+        "revision": "0x1",
+        "subsystem_vendor_id": "0x0",
+        "subsystem_id": "0x0",
+        "class_id": "0xc07",
+        "driver": "None"
+    }
+}

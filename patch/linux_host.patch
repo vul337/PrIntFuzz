@@ -1,0 +1,83 @@
+From d4847938fb553e079829176595a008aa7386203a Mon Sep 17 00:00:00 2001
+From: zheyuma <zheyuma97@gmail.com>
+Date: Mon, 11 Apr 2022 14:12:12 +0000
+Subject: [PATCH] kvm: Add four hypercalls for PrIntFuzz
+
+Signed-off-by: zheyuma <zheyuma97@gmail.com>
+---
+ arch/x86/kvm/x86.c            | 27 +++++++++++++++++++++++++++
+ include/uapi/linux/kvm.h      |  4 ++++
+ include/uapi/linux/kvm_para.h |  4 ++++
+ 3 files changed, 35 insertions(+)
+
+diff --git a/arch/x86/kvm/x86.c b/arch/x86/kvm/x86.c
+index 1f7dfa5aa42d..df8f83abb109 100644
+--- a/arch/x86/kvm/x86.c
++++ b/arch/x86/kvm/x86.c
+@@ -7519,6 +7519,33 @@ int kvm_emulate_hypercall(struct kvm_vcpu *vcpu)
+ 	}
+ 
+ 	switch (nr) {
++    case KVM_HC_INTERRUPT:
++        vcpu->run->exit_reason = KVM_EXIT_INTERRUPT;
++        vcpu->run->hypercall.args[0] = a0;
++        printk("kvm_hc_interrupt: 0x%lx.\n", a0);
++        kvm_skip_emulated_instruction(vcpu);
++        return 0;
++    case KVM_HC_PREPARE_DATA:
++        vcpu->run->exit_reason = KVM_EXIT_PREPARE_DATA;
++        vcpu->run->hypercall.args[0] = a0;
++        vcpu->run->hypercall.args[1] = a1;
++        printk("kvm_hc_prepare_data: 0x%lx, 0x%lx.\n", a0, a1);
++        kvm_skip_emulated_instruction(vcpu);
++        return 0;
++    case KVM_HC_ALLOC_DMA:
++        vcpu->run->exit_reason = KVM_EXIT_ALLOC_DMA;
++        vcpu->run->hypercall.args[0] = a0;
++        vcpu->run->hypercall.args[1] = a1;
++        printk("kvm_hc_alloc_dma: 0x%lx, 0x%lx.\n", a0, a1);
++        kvm_skip_emulated_instruction(vcpu);
++        return 0;
++    case KVM_HC_PCI_CONFIG:
++        vcpu->run->exit_reason = KVM_EXIT_PCI_CONFIG;
++        vcpu->run->hypercall.args[0] = a0;
++        vcpu->run->hypercall.args[1] = a1;
++        printk("kvm_hc_pci_config: 0x%lx, 0x%lx.\n", a0, a1);
++        kvm_skip_emulated_instruction(vcpu);
++        return 0;
+ 	case KVM_HC_VAPIC_POLL_IRQ:
+ 		ret = 0;
+ 		break;
+diff --git a/include/uapi/linux/kvm.h b/include/uapi/linux/kvm.h
+index 1b6b8e05868d..3bfa39053d08 100644
+--- a/include/uapi/linux/kvm.h
++++ b/include/uapi/linux/kvm.h
+@@ -269,6 +269,10 @@ struct kvm_hyperv_exit {
+ #define KVM_EXIT_AP_RESET_HOLD    32
+ #define KVM_EXIT_X86_BUS_LOCK     33
+ #define KVM_EXIT_XEN              34
++#define KVM_EXIT_INTERRUPT        35
++#define KVM_EXIT_PREPARE_DATA     36
++#define KVM_EXIT_ALLOC_DMA        37
++#define KVM_EXIT_PCI_CONFIG       38
+ 
+ /* For KVM_EXIT_INTERNAL_ERROR */
+ /* Emulate instruction failed. */
+diff --git a/include/uapi/linux/kvm_para.h b/include/uapi/linux/kvm_para.h
+index 8b86609849b9..b796b683508d 100644
+--- a/include/uapi/linux/kvm_para.h
++++ b/include/uapi/linux/kvm_para.h
+@@ -29,6 +29,10 @@
+ #define KVM_HC_CLOCK_PAIRING		9
+ #define KVM_HC_SEND_IPI		10
+ #define KVM_HC_SCHED_YIELD		11
++#define KVM_HC_INTERRUPT        20
++#define KVM_HC_PREPARE_DATA     21
++#define KVM_HC_ALLOC_DMA        22
++#define KVM_HC_PCI_CONFIG       23
+ 
+ /*
+  * hypercalls use architecture specific
+-- 
+2.25.1
+

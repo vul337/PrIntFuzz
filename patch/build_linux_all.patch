@@ -1,0 +1,232 @@
+diff --git a/drivers/atm/eni.c b/drivers/atm/eni.c
+index a31ffe16e626..8ea1ec8a8dcf 100644
+--- a/drivers/atm/eni.c
++++ b/drivers/atm/eni.c
+@@ -2308,9 +2308,9 @@ static struct pci_driver eni_driver = {
+ 
+ static int __init eni_init(void)
+ {
+-	struct sk_buff *skb; /* dummy for sizeof */
++	// struct sk_buff *skb; /* dummy for sizeof */
+ 
+-	BUILD_BUG_ON(sizeof(skb->cb) < sizeof(struct eni_skb_prv));
++	// BUILD_BUG_ON(sizeof(skb->cb) < sizeof(struct eni_skb_prv));
+ 	return pci_register_driver(&eni_driver);
+ }
+ 
+diff --git a/drivers/atm/idt77252.c b/drivers/atm/idt77252.c
+index 81ce81a75fc6..4205bf312e2c 100644
+--- a/drivers/atm/idt77252.c
++++ b/drivers/atm/idt77252.c
+@@ -3734,10 +3734,10 @@ static struct pci_driver idt77252_driver = {
+ 
+ static int __init idt77252_init(void)
+ {
+-	struct sk_buff *skb;
++	// struct sk_buff *skb;
+ 
+-	printk("%s: at %p\n", __func__, idt77252_init);
+-	BUILD_BUG_ON(sizeof(skb->cb) < sizeof(struct idt77252_skb_prv) + sizeof(struct atm_skb_data));
++	// printk("%s: at %p\n", __func__, idt77252_init);
++	// BUILD_BUG_ON(sizeof(skb->cb) < sizeof(struct idt77252_skb_prv) + sizeof(struct atm_skb_data));
+ 	return pci_register_driver(&idt77252_driver);
+ }
+ 
+diff --git a/drivers/firmware/efi/libstub/Makefile b/drivers/firmware/efi/libstub/Makefile
+index d0537573501e..f627fe10eaba 100644
+--- a/drivers/firmware/efi/libstub/Makefile
++++ b/drivers/firmware/efi/libstub/Makefile
+@@ -51,6 +51,7 @@ OBJECT_FILES_NON_STANDARD	:= y
+ 
+ # Prevents link failures: __sanitizer_cov_trace_pc() is not linked in.
+ KCOV_INSTRUMENT			:= n
++KBUILD_CFLAGS := $(filter-out $(CFLAGS_KCOV), $(KBUILD_CFLAGS))
+ 
+ lib-y				:= efi-stub-helper.o gop.o secureboot.o tpm.o \
+ 				   file.o mem.o random.o randomalloc.o pci.o \
+diff --git a/drivers/net/wireless/realtek/rtw89/pci.h b/drivers/net/wireless/realtek/rtw89/pci.h
+index b84acd0d0582..6b0e27d30294 100644
+--- a/drivers/net/wireless/realtek/rtw89/pci.h
++++ b/drivers/net/wireless/realtek/rtw89/pci.h
+@@ -606,10 +606,10 @@ struct rtw89_pci {
+ 
+ static inline struct rtw89_pci_rx_info *RTW89_PCI_RX_SKB_CB(struct sk_buff *skb)
+ {
+-	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
++	// struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
+ 
+-	BUILD_BUG_ON(sizeof(struct rtw89_pci_tx_data) >
+-		     sizeof(info->status.status_driver_data));
++	// BUILD_BUG_ON(sizeof(struct rtw89_pci_tx_data) >
++	// 	     sizeof(info->status.status_driver_data));
+ 
+ 	return (struct rtw89_pci_rx_info *)skb->cb;
+ }
+diff --git a/drivers/staging/wfx/data_tx.c b/drivers/staging/wfx/data_tx.c
+index e07381b2ff4d..1a138f586dff 100644
+--- a/drivers/staging/wfx/data_tx.c
++++ b/drivers/staging/wfx/data_tx.c
+@@ -387,10 +387,10 @@ void wfx_tx(struct ieee80211_hw *hw, struct ieee80211_tx_control *control, struc
+ 	struct ieee80211_sta *sta = control ? control->sta : NULL;
+ 	struct ieee80211_tx_info *tx_info = IEEE80211_SKB_CB(skb);
+ 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
+-	size_t driver_data_room = sizeof_field(struct ieee80211_tx_info, rate_driver_data);
++	// size_t driver_data_room = sizeof_field(struct ieee80211_tx_info, rate_driver_data);
+ 
+-	BUILD_BUG_ON_MSG(sizeof(struct wfx_tx_priv) > driver_data_room,
+-			 "struct tx_priv is too large");
++	// BUILD_BUG_ON_MSG(sizeof(struct wfx_tx_priv) > driver_data_room,
++	// 		 "struct tx_priv is too large");
+ 	WARN(skb->next || skb->prev, "skb is already member of a list");
+ 	/* control.vif can be NULL for injected frames */
+ 	if (tx_info->control.vif)
+diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+index c22d287e020b..ac0c610f80da 100644
+--- a/fs/btrfs/block-group.c
++++ b/fs/btrfs/block-group.c
+@@ -2946,7 +2946,7 @@ int btrfs_start_dirty_block_groups(struct btrfs_trans_handle *trans)
+ 	struct btrfs_path *path = NULL;
+ 	LIST_HEAD(dirty);
+ 	struct list_head *io = &cur_trans->io_bgs;
+-	int num_started = 0;
++	// int num_started = 0;
+ 	int loops = 0;
+ 
+ 	spin_lock(&cur_trans->dirty_bgs_lock);
+@@ -3012,7 +3012,7 @@ int btrfs_start_dirty_block_groups(struct btrfs_trans_handle *trans)
+ 			cache->io_ctl.inode = NULL;
+ 			ret = btrfs_write_out_cache(trans, cache, path);
+ 			if (ret == 0 && cache->io_ctl.inode) {
+-				num_started++;
++				// num_started++;
+ 				should_put = 0;
+ 
+ 				/*
+@@ -3113,7 +3113,7 @@ int btrfs_write_dirty_block_groups(struct btrfs_trans_handle *trans)
+ 	int should_put;
+ 	struct btrfs_path *path;
+ 	struct list_head *io = &cur_trans->io_bgs;
+-	int num_started = 0;
++	// int num_started = 0;
+ 
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+@@ -3171,7 +3171,7 @@ int btrfs_write_dirty_block_groups(struct btrfs_trans_handle *trans)
+ 			cache->io_ctl.inode = NULL;
+ 			ret = btrfs_write_out_cache(trans, cache, path);
+ 			if (ret == 0 && cache->io_ctl.inode) {
+-				num_started++;
++				// num_started++;
+ 				should_put = 0;
+ 				list_add_tail(&cache->io_list, io);
+ 			} else {
+diff --git a/include/net/sch_generic.h b/include/net/sch_generic.h
+index 9bab396c1f3b..0cde36625eb8 100644
+--- a/include/net/sch_generic.h
++++ b/include/net/sch_generic.h
+@@ -512,10 +512,10 @@ static inline bool lockdep_tcf_proto_is_locked(struct tcf_proto *tp)
+ 
+ static inline void qdisc_cb_private_validate(const struct sk_buff *skb, int sz)
+ {
+-	struct qdisc_skb_cb *qcb;
++	// struct qdisc_skb_cb *qcb;
+ 
+-	BUILD_BUG_ON(sizeof(skb->cb) < sizeof(*qcb));
+-	BUILD_BUG_ON(sizeof(qcb->data) < sz);
++	// BUILD_BUG_ON(sizeof(skb->cb) < sizeof(*qcb));
++	// BUILD_BUG_ON(sizeof(qcb->data) < sz);
+ }
+ 
+ static inline int qdisc_qlen(const struct Qdisc *q)
+diff --git a/kernel/bpf/helpers.c b/kernel/bpf/helpers.c
+index 315053ef6a75..d91d5d3e1073 100644
+--- a/kernel/bpf/helpers.c
++++ b/kernel/bpf/helpers.c
+@@ -245,16 +245,16 @@ const struct bpf_func_proto bpf_get_current_comm_proto = {
+ 
+ static inline void __bpf_spin_lock(struct bpf_spin_lock *lock)
+ {
+-	arch_spinlock_t *l = (void *)lock;
+-	union {
+-		__u32 val;
+-		arch_spinlock_t lock;
+-	} u = { .lock = __ARCH_SPIN_LOCK_UNLOCKED };
+-
+-	compiletime_assert(u.val == 0, "__ARCH_SPIN_LOCK_UNLOCKED not 0");
+-	BUILD_BUG_ON(sizeof(*l) != sizeof(__u32));
+-	BUILD_BUG_ON(sizeof(*lock) != sizeof(__u32));
+-	arch_spin_lock(l);
++// 	arch_spinlock_t *l = (void *)lock;
++// 	union {
++// 		__u32 val;
++// 		arch_spinlock_t lock;
++// 	} u = { .lock = __ARCH_SPIN_LOCK_UNLOCKED };
++// 
++// 	compiletime_assert(u.val == 0, "__ARCH_SPIN_LOCK_UNLOCKED not 0");
++// 	BUILD_BUG_ON(sizeof(*l) != sizeof(__u32));
++// 	BUILD_BUG_ON(sizeof(*lock) != sizeof(__u32));
++// 	arch_spin_lock(l);
+ }
+ 
+ static inline void __bpf_spin_unlock(struct bpf_spin_lock *lock)
+diff --git a/net/mac80211/main.c b/net/mac80211/main.c
+index a48a32f87897..af4be8c0c2ae 100644
+--- a/net/mac80211/main.c
++++ b/net/mac80211/main.c
+@@ -1461,12 +1461,12 @@ EXPORT_SYMBOL(ieee80211_free_hw);
+ 
+ static int __init ieee80211_init(void)
+ {
+-	struct sk_buff *skb;
++	// struct sk_buff *skb;
+ 	int ret;
+ 
+-	BUILD_BUG_ON(sizeof(struct ieee80211_tx_info) > sizeof(skb->cb));
+-	BUILD_BUG_ON(offsetof(struct ieee80211_tx_info, driver_data) +
+-		     IEEE80211_TX_INFO_DRIVER_DATA_SIZE > sizeof(skb->cb));
++	// BUILD_BUG_ON(sizeof(struct ieee80211_tx_info) > sizeof(skb->cb));
++	// BUILD_BUG_ON(offsetof(struct ieee80211_tx_info, driver_data) +
++	// 	     IEEE80211_TX_INFO_DRIVER_DATA_SIZE > sizeof(skb->cb));
+ 
+ 	ret = rc80211_minstrel_init();
+ 	if (ret)
+diff --git a/net/mac80211/rc80211_minstrel_ht.c b/net/mac80211/rc80211_minstrel_ht.c
+index 9c6ace858107..86d051862a9f 100644
+--- a/net/mac80211/rc80211_minstrel_ht.c
++++ b/net/mac80211/rc80211_minstrel_ht.c
+@@ -1773,7 +1773,7 @@ minstrel_ht_fill_rate_array(u8 *dest, struct ieee80211_supported_band *sband,
+ static void
+ minstrel_ht_init_cck_rates(struct minstrel_priv *mp)
+ {
+-	static const s16 bitrates[4] = { 10, 20, 55, 110 };
++	// static const s16 bitrates[4] = { 10, 20, 55, 110 };
+ 	struct ieee80211_supported_band *sband;
+ 	u32 rate_flags = ieee80211_chandef_rate_flags(&mp->hw->conf.chandef);
+ 
+@@ -1782,7 +1782,7 @@ minstrel_ht_init_cck_rates(struct minstrel_priv *mp)
+ 	if (!sband)
+ 		return;
+ 
+-	BUILD_BUG_ON(ARRAY_SIZE(mp->cck_rates) != ARRAY_SIZE(bitrates));
++	// BUILD_BUG_ON(ARRAY_SIZE(mp->cck_rates) != ARRAY_SIZE(bitrates));
+ 	minstrel_ht_fill_rate_array(mp->cck_rates, sband,
+ 				    minstrel_cck_bitrates,
+ 				    ARRAY_SIZE(minstrel_cck_bitrates),
+@@ -1792,7 +1792,7 @@ minstrel_ht_init_cck_rates(struct minstrel_priv *mp)
+ static void
+ minstrel_ht_init_ofdm_rates(struct minstrel_priv *mp, enum nl80211_band band)
+ {
+-	static const s16 bitrates[8] = { 60, 90, 120, 180, 240, 360, 480, 540 };
++	// static const s16 bitrates[8] = { 60, 90, 120, 180, 240, 360, 480, 540 };
+ 	struct ieee80211_supported_band *sband;
+ 	u32 rate_flags = ieee80211_chandef_rate_flags(&mp->hw->conf.chandef);
+ 
+@@ -1801,7 +1801,7 @@ minstrel_ht_init_ofdm_rates(struct minstrel_priv *mp, enum nl80211_band band)
+ 	if (!sband)
+ 		return;
+ 
+-	BUILD_BUG_ON(ARRAY_SIZE(mp->ofdm_rates[band]) != ARRAY_SIZE(bitrates));
++	// BUILD_BUG_ON(ARRAY_SIZE(mp->ofdm_rates[band]) != ARRAY_SIZE(bitrates));
+ 	minstrel_ht_fill_rate_array(mp->ofdm_rates[band], sband,
+ 				    minstrel_ofdm_bitrates,
+ 				    ARRAY_SIZE(minstrel_ofdm_bitrates),

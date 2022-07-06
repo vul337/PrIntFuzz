@@ -1,0 +1,1076 @@
+diff --git a/.gitignore b/.gitignore
+index 7de868d1eab4..29c3f4be59f1 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -162,3 +162,12 @@ trace-dtrace-root.dtrace
+ trace-ust-all.h
+ trace-ust-all.c
+ /target/arm/decode-sve.inc.c
++
++.cache
++compile_commands.json
++/hw/fake_pci
++/hw/fake_usb
++/hw/fake_i2c
++/include/hw/fake_pci
++.cache
++compile_commands.json
+diff --git a/accel/kvm/kvm-all.c b/accel/kvm/kvm-all.c
+index 7b9f92d51ca7..ac23e24ed34f 100644
+--- a/accel/kvm/kvm-all.c
++++ b/accel/kvm/kvm-all.c
+@@ -27,6 +27,7 @@
+ #include "hw/pci/msix.h"
+ #include "hw/s390x/adapter.h"
+ #include "exec/gdbstub.h"
++#include "sysemu/kvm.h"
+ #include "sysemu/kvm_int.h"
+ #include "sysemu/runstate.h"
+ #include "sysemu/cpus.h"
+@@ -2247,6 +2248,58 @@ static void kvm_cpu_kick_self(void)
+     }
+ }
+ 
++uint8_t data[FUZZ_DATA_SIZE];
++uint8_t dma_data[FUZZ_DMA_DATA_SIZE];
++uint8_t device_name[0x10];
++
++static bool read_virtual_memory(uint64_t address, uint8_t* data, uint32_t size, CPUState *cpu){
++    uint8_t tmp_buf[x86_64_PAGE_SIZE];
++    MemTxAttrs attrs;
++    hwaddr phys_addr;
++    int asidx;
++
++  	uint64_t amount_copied = 0;
++
++    //cpu_synchronize_state(cpu);
++    kvm_cpu_synchronize_state(cpu);
++
++    /* copy per page */
++    while(amount_copied < size){
++      	uint64_t len_to_copy = (size - amount_copied);
++        if(len_to_copy > x86_64_PAGE_SIZE)
++            len_to_copy = x86_64_PAGE_SIZE;
++        asidx = cpu_asidx_from_attrs(cpu, MEMTXATTRS_UNSPECIFIED);
++        attrs = MEMTXATTRS_UNSPECIFIED;
++        phys_addr = cpu_get_phys_page_attrs_debug(cpu, (address & x86_64_PAGE_MASK), &attrs);
++
++        if (phys_addr == -1){
++            uint64_t next_page = (address & x86_64_PAGE_MASK) + x86_64_PAGE_SIZE;
++            uint64_t len_skipped =next_page-address;  
++            if(len_skipped > size-amount_copied){
++                len_skipped = size-amount_copied;
++            }
++
++            memset( data+amount_copied, ' ',  len_skipped);
++            address += len_skipped;
++            amount_copied += len_skipped;
++            continue;
++        }
++
++        phys_addr += (address & ~x86_64_PAGE_MASK);
++        uint64_t remaining_on_page = x86_64_PAGE_SIZE - (address & ~x86_64_PAGE_MASK);
++        if(len_to_copy > remaining_on_page){
++            len_to_copy = remaining_on_page;
++        }
++        address_space_rw(cpu_get_address_space(cpu, asidx), phys_addr, MEMTXATTRS_UNSPECIFIED, tmp_buf, len_to_copy, 0);
++        memcpy(data+amount_copied, tmp_buf, len_to_copy);
++
++        address += len_to_copy;
++        amount_copied += len_to_copy;
++    }
++
++    return true;
++}
++
+ static void kvm_eat_signals(CPUState *cpu)
+ {
+     struct timespec ts = { 0, 0 };
+@@ -2358,6 +2411,35 @@ int kvm_cpu_exec(CPUState *cpu)
+ 
+         trace_kvm_run_exit(cpu->cpu_index, run->exit_reason);
+         switch (run->exit_reason) {
++        case KVM_EXIT_INTERRUPT:
++            read_virtual_memory(run->hypercall.args[0], device_name, x86_64_PAGE_SIZE, cpu);
++            pci_set_device_irq(device_name);
++
++            ret = 0;
++            break;
++        case KVM_EXIT_PREPARE_DATA:
++            if (run->hypercall.args[0] != (__u64)-1) {
++                read_virtual_memory(run->hypercall.args[0], data, FUZZ_DATA_SIZE, cpu);
++            } else {
++                memset(data, 0, sizeof(data));
++            }
++            pci_set_value(data);
++
++            if (run->hypercall.args[1] != (__u64)-1) {
++                read_virtual_memory(run->hypercall.args[1], dma_data, FUZZ_DMA_DATA_SIZE, cpu);
++            } else {
++                memset(dma_data, 0, sizeof(dma_data));
++            }
++            pci_inject_dma_data(dma_data);
++
++            ret = 0;
++            break;
++        case KVM_EXIT_ALLOC_DMA:
++            pci_register_dma_region(run->hypercall.args[0], run->hypercall.args[1]);
++            break;
++        case KVM_EXIT_PCI_CONFIG:
++            pci_identify_device(run->hypercall.args[0], run->hypercall.args[1]);
++            break;
+         case KVM_EXIT_IO:
+             DPRINTF("handle_io\n");
+             /* Called outside BQL */
+diff --git a/configure b/configure
+index 6099be1d848c..5abf4a9a2a42 100755
+--- a/configure
++++ b/configure
+@@ -3472,9 +3472,25 @@ for drv in $audio_drv_list; do
+ 
+     pa | try-pa)
+     if $pkg_config libpulse --exists; then
+-        pulse_libs=$($pkg_config libpulse --libs)
+-        if test "$drv" = "try-pa"; then
+-            audio_drv_list=$(echo "$audio_drv_list" | sed -e 's/try-pa/pa/')
++        pulse_cflags=$($pkg_config --cflags libpulse)
++        if test "$static" = "yes"; then
++            pulse_libs=$($pkg_config --libs --static libpulse)
++        else
++            pulse_libs=$($pkg_config --libs libpulse)
++        fi
++        # Packaging for the static libraries is not always correct.
++        # At least ubuntu 18.04 ships only shared libraries.
++        write_c_skeleton
++        if ! compile_prog "$pulse_cflags" "$pulse_libs" ; then
++            unset pulse_cflags pulse_libs
++            if test "$drv" = "try-pa"; then
++                audio_drv_list=$(echo "$audio_drv_list" | sed -e 's/try-pa//')
++            fi
++        else
++            audio_pt_int="yes"
++            if test "$drv" = "try-pa"; then
++                audio_drv_list=$(echo "$audio_drv_list" | sed -e 's/try-pa/pa/')
++            fi
+         fi
+     else
+         if test "$drv" = "try-pa"; then
+diff --git a/hw/Makefile.objs b/hw/Makefile.objs
+index 66eef2056157..0892795c3534 100644
+--- a/hw/Makefile.objs
++++ b/hw/Makefile.objs
+@@ -24,6 +24,8 @@ devices-dirs-y += net/
+ devices-dirs-y += rdma/
+ devices-dirs-y += nvram/
+ devices-dirs-y += pci/
++devices-dirs-y += fake_pci/
++devices-dirs-y += fake_usb/
+ devices-dirs-$(CONFIG_PCI) += pci-bridge/ pci-host/
+ devices-dirs-y += pcmcia/
+ devices-dirs-y += rtc/
+@@ -41,6 +43,9 @@ devices-dirs-$(CONFIG_MEM_DEVICE) += mem/
+ devices-dirs-$(CONFIG_NUBUS) += nubus/
+ devices-dirs-y += semihosting/
+ devices-dirs-y += smbios/
++devices-dirs-y += fake_pci/
++devices-dirs-y += fake_usb/
++devices-dirs-y += fake_i2c/
+ endif
+ 
+ common-obj-y += $(devices-dirs-y)
+diff --git a/hw/arm/virt.c b/hw/arm/virt.c
+index d4bedc260712..d6d6971808d6 100644
+--- a/hw/arm/virt.c
++++ b/hw/arm/virt.c
+@@ -72,6 +72,8 @@
+ #include "hw/mem/nvdimm.h"
+ #include "hw/acpi/generic_event_device.h"
+ 
++#include "hw/i2c/i2c.h"
++
+ #define DEFINE_VIRT_MACHINE_LATEST(major, minor, latest) \
+     static void virt_##major##_##minor##_class_init(ObjectClass *oc, \
+                                                     void *data) \
+@@ -145,6 +147,7 @@ static const MemMapEntry base_memmap[] = {
+     [VIRT_ACPI_GED] =           { 0x09080000, ACPI_GED_EVT_SEL_LEN },
+     [VIRT_MMIO] =               { 0x0a000000, 0x00000200 },
+     /* ...repeating for a total of NUM_VIRTIO_TRANSPORTS, each of that size */
++	[VIRT_I2C] = 				{ 0x10010000, 0x1000 },
+     [VIRT_PLATFORM_BUS] =       { 0x0c000000, 0x02000000 },
+     [VIRT_SECURE_MEM] =         { 0x0e000000, 0x01000000 },
+     [VIRT_PCIE_MMIO] =          { 0x10000000, 0x2eff0000 },
+@@ -179,6 +182,7 @@ static const int a15irqmap[] = {
+     [VIRT_GPIO] = 7,
+     [VIRT_SECURE_UART] = 8,
+     [VIRT_ACPI_GED] = 9,
++	[VIRT_I2C] = 10,
+     [VIRT_MMIO] = 16, /* ...to 16 + NUM_VIRTIO_TRANSPORTS - 1 */
+     [VIRT_GIC_V2M] = 48, /* ...to 48 + NUM_GICV2M_SPIS - 1 */
+     [VIRT_SMMU] = 74,    /* ...to 74 + NUM_SMMU_IRQS - 1 */
+@@ -1503,6 +1507,25 @@ static void virt_set_memmap(VirtMachineState *vms)
+     }
+ }
+ 
++static void create_i2c(const VirtMachineState *vms, qemu_irq *pic) {
++    // DeviceState *dev;
++
++    sysbus_create_simple("versatile_i2c", vms->memmap[VIRT_I2C].base, NULL);
++    // I2CBus *i2c = (I2CBus *)qdev_get_child_bus(dev, "i2c");
++
++    char *nodename = g_strdup_printf("/versatile_i2c@%" PRIx64, vms->memmap[VIRT_I2C].base);
++    qemu_fdt_add_subnode(vms->fdt, nodename);
++    qemu_fdt_setprop_string(vms->fdt, nodename,
++                                "compatible", "arm,versatile-i2c");
++    qemu_fdt_setprop_sized_cells(vms->fdt, nodename, "reg",
++                                     2, vms->memmap[VIRT_I2C].base, 2, vms->memmap[VIRT_I2C].size);
++
++    qemu_fdt_setprop_cell(vms->fdt, nodename, "#address-cells", 0x1);
++    qemu_fdt_setprop_cell(vms->fdt, nodename, "#size-cells", 0x1);
++
++	g_free(nodename);
++}
++
+ static void machvirt_init(MachineState *machine)
+ {
+     VirtMachineState *vms = VIRT_MACHINE(machine);
+@@ -1714,6 +1737,8 @@ static void machvirt_init(MachineState *machine)
+ 
+     create_gic(vms, pic);
+ 
++	create_i2c(vms, pic);
++
+     fdt_add_pmu_nodes(vms);
+ 
+     create_uart(vms, pic, VIRT_UART, sysmem, serial_hd(0));
+diff --git a/hw/i2c/Makefile.objs b/hw/i2c/Makefile.objs
+index d7073a401f1c..835f4f89415d 100644
+--- a/hw/i2c/Makefile.objs
++++ b/hw/i2c/Makefile.objs
+@@ -11,3 +11,4 @@ common-obj-$(CONFIG_NRF51_SOC) += microbit_i2c.o
+ common-obj-$(CONFIG_MPC_I2C) += mpc_i2c.o
+ obj-$(CONFIG_OMAP) += omap_i2c.o
+ obj-$(CONFIG_PPC4XX) += ppc4xx_i2c.o
++common-obj-y += versatile_i2c.o
+diff --git a/hw/misc/i2c_base.c b/hw/misc/i2c_base.c
+new file mode 100644
+index 000000000000..2724effd9a54
+--- /dev/null
++++ b/hw/misc/i2c_base.c
+@@ -0,0 +1,92 @@
++#include "qemu/osdep.h"
++#include "hw/i2c/i2c.h"
++#include "hw/irq.h"
++#include "migration/vmstate.h"
++#include "qapi/error.h"
++#include "qapi/visitor.h"
++#include "qemu/module.h"
++
++#define TYPE_I2CBASE "DEVICE_ID"
++#define I2CBASE(obj) OBJECT_CHECK(I2CBASEState, (obj), TYPE_I2CBASE)
++#define BUFLEN 100
++
++typedef struct I2CBASEState {
++    I2CSlave i2c;
++
++    uint8_t len;
++    uint8_t buf[BUFLEN];
++} I2CBASEState;
++
++static void i2cbase_read(I2CBASEState *s)
++{
++	return;
++}
++
++static uint8_t i2cbase_rx(I2CSlave *i2c)
++{
++    I2CBASEState *s = I2CBASE(i2c);
++
++	return s->buf[s->len++];
++}
++
++static int i2cbase_tx(I2CSlave *i2c, uint8_t data)
++{
++    return 0;
++}
++
++static int i2cbase_event(I2CSlave *i2c, enum i2c_event event)
++{
++    I2CBASEState *s = I2CBASE(i2c);
++
++    if (event == I2C_START_RECV) {
++        i2cbase_read(s);
++    }
++
++    return 0;
++}
++
++static const VMStateDescription vmstate_i2cbase = {
++    .name = "I2CBASE",
++    .version_id = 0,
++    .minimum_version_id = 0,
++    .fields = (VMStateField[]) {
++        VMSTATE_UINT8(len, I2CBASEState),
++        VMSTATE_UINT8_ARRAY(buf, I2CBASEState, BUFLEN),
++        VMSTATE_END_OF_LIST()
++    }
++};
++
++static void i2cbase_realize(DeviceState *dev, Error **errp)
++{
++    I2CSlave *i2c = I2C_SLAVE(dev);
++    I2CBASEState *s = I2CBASE(i2c);
++
++	s->len = 0;
++	#REGVALUE;
++}
++
++static void i2cbase_class_init(ObjectClass *klass, void *data)
++{
++    DeviceClass *dc = DEVICE_CLASS(klass);
++    I2CSlaveClass *k = I2C_SLAVE_CLASS(klass);
++
++    dc->realize = i2cbase_realize;
++    k->event = i2cbase_event;
++    k->recv = i2cbase_rx;
++    k->send = i2cbase_tx;
++    dc->vmsd = &vmstate_i2cbase;
++}
++
++static const TypeInfo i2cbase_info = {
++    .name          = TYPE_I2CBASE,
++    .parent        = TYPE_I2C_SLAVE,
++    .instance_size = sizeof(I2CBASEState),
++    .class_init    = i2cbase_class_init,
++};
++
++static void i2cbase_register_types(void)
++{
++    type_register_static(&i2cbase_info);
++}
++
++type_init(i2cbase_register_types)
+diff --git a/hw/misc/pci_base.c b/hw/misc/pci_base.c
+new file mode 100644
+index 000000000000..a95720c37ad8
+--- /dev/null
++++ b/hw/misc/pci_base.c
+@@ -0,0 +1,160 @@
++#include "qemu/osdep.h"
++#include "qemu/units.h"
++#include "hw/pci/pci.h"
++#include "hw/hw.h"
++#include "hw/pci/msi.h"
++#include "qemu/timer.h"
++#include "qemu/main-loop.h" /* iothread mutex */
++#include "qemu/module.h"
++#include "qapi/visitor.h"
++
++#define PCIBASE_BUF_LEN 1024
++
++extern uint64_t target_value[PCIBASE_BUF_LEN];
++extern bool target_value_reset;
++
++typedef struct {
++    PCIDevice pdev;
++    MemoryRegion mmio[7];
++
++    uint32_t len;
++    uint64_t buf[PCIBASE_BUF_LEN];
++    int is_probe_time;
++} PCIBaseState;
++
++#define TYPE_PCI_PCIBASE_DEVICE "pcibase"
++#define PCIBASE(obj)        OBJECT_CHECK(PCIBaseState, obj, TYPE_PCI_PCIBASE_DEVICE)
++
++static uint64_t pcibase_mmio_read(void *opaque, hwaddr addr, unsigned size)
++{
++    PCIBaseState *pcibase = opaque;
++    int i;
++
++    if (target_value_reset) {
++        pcibase->len = 0;
++        target_value_reset = false;
++    }
++
++    if (!pcibase->is_probe_time) {
++        for (i = 0; i < PCIBASE_BUF_LEN; ++i) {
++            pcibase->buf[i] = target_value[i];
++        }
++    } else {
++        pcibase->is_probe_time--;
++    }
++
++    return pcibase->buf[(pcibase->len++) % PCIBASE_BUF_LEN];
++}
++
++static void pcibase_mmio_write(void *opaque, hwaddr addr, uint64_t val,
++                unsigned size)
++{
++	return;
++}
++
++static const MemoryRegionOps pcibase_mmio_ops = {
++    .read = pcibase_mmio_read,
++    .write = pcibase_mmio_write,
++    .endianness = DEVICE_NATIVE_ENDIAN,
++    .valid = {
++        .min_access_size = 4,
++        .max_access_size = 8,
++    },
++    .impl = {
++        .min_access_size = 4,
++        .max_access_size = 8,
++    },
++
++};
++
++static void pci_pcibase_realize(PCIDevice *pdev, Error **errp)
++{
++    PCIBaseState *pcibase = PCIBASE(pdev);
++    uint8_t *pci_conf = pdev->config;
++	int pos;
++
++    pci_config_set_interrupt_pin(pci_conf, 1);
++	#PCI_CONFIG#
++
++    if (msi_init(pdev, 0, 1, true, false, errp)) {
++        return;
++    }
++	
++	pdev->cap_present |= QEMU_PCI_CAP_EXPRESS;
++	pcie_endpoint_cap_init(pdev, 0);
++
++	pos = pci_add_capability(pdev, PCI_CAP_ID_PM, 0, PCI_PM_SIZEOF, errp);
++	pdev->exp.pm_cap = pos;
++	pci_set_word(pdev->config + pos + PCI_PM_PMC, 0x3);
++
++    pcibase->len = 0;
++    pcibase->is_probe_time = #PROBECNT#;
++	#REGVALUE;
++
++    memory_region_init_io(&pcibase->mmio[0], OBJECT(pcibase), &pcibase_mmio_ops, pcibase,
++                    "pcibase-mmio0", 16 * MiB);
++    pci_register_bar(pdev, 0, PCI_BASE_ADDRESS_SPACE_MEMORY, &pcibase->mmio[0]);
++    memory_region_init_io(&pcibase->mmio[1], OBJECT(pcibase), &pcibase_mmio_ops, pcibase,
++                    "pcibase-mmio1", 16 * MiB);
++    pci_register_bar(pdev, 1, PCI_BASE_ADDRESS_SPACE_MEMORY, &pcibase->mmio[1]);
++    memory_region_init_io(&pcibase->mmio[2], OBJECT(pcibase), &pcibase_mmio_ops, pcibase,
++                    "pcibase-mmio2", 16 * MiB);
++    pci_register_bar(pdev, 2, PCI_BASE_ADDRESS_SPACE_MEMORY, &pcibase->mmio[2]);
++    memory_region_init_io(&pcibase->mmio[3], OBJECT(pcibase), &pcibase_mmio_ops, pcibase,
++                    "pcibase-mmio3", 16 * MiB);
++    pci_register_bar(pdev, 3, PCI_BASE_ADDRESS_SPACE_MEMORY, &pcibase->mmio[3]);
++    memory_region_init_io(&pcibase->mmio[4], OBJECT(pcibase), &pcibase_mmio_ops, pcibase,
++                    "pcibase-mmio4", 16 * MiB);
++    pci_register_bar(pdev, 4, PCI_BASE_ADDRESS_SPACE_MEMORY, &pcibase->mmio[4]);
++    memory_region_init_io(&pcibase->mmio[5], OBJECT(pcibase), &pcibase_mmio_ops, pcibase,
++                    "pcibase-mmio5", 16 * MiB);
++    pci_register_bar(pdev, 5, PCI_BASE_ADDRESS_SPACE_MEMORY, &pcibase->mmio[5]);
++    memory_region_init_io(&pcibase->mmio[6], OBJECT(pcibase), &pcibase_mmio_ops, pcibase,
++                    "pcibase-mmio5", 16 * MiB);
++    pci_register_bar(pdev, 6, PCI_BASE_ADDRESS_SPACE_MEMORY, &pcibase->mmio[6]);
++}
++
++static void pci_pcibase_uninit(PCIDevice *pdev)
++{
++    msi_uninit(pdev);
++}
++
++static void pcibase_instance_init(Object *obj)
++{
++	return;
++}
++
++static void pcibase_class_init(ObjectClass *class, void *data)
++{
++    DeviceClass *dc = DEVICE_CLASS(class);
++    PCIDeviceClass *k = PCI_DEVICE_CLASS(class);
++
++    k->realize = pci_pcibase_realize;
++    k->exit = pci_pcibase_uninit;
++    k->vendor_id = #VENDOR_ID#;
++    k->device_id = #DEVICE_ID#;
++    k->revision = #REVISION#;
++    k->subsystem_vendor_id = #SUBSYSTEM_VENDOR_ID#;
++    k->subsystem_id = #SUBSYSTEM_ID#;
++    k->class_id = #CLASS_ID#;
++    set_bit(DEVICE_CATEGORY_MISC, dc->categories);
++}
++
++static void pci_pcibase_register_types(void)
++{
++    static InterfaceInfo interfaces[] = {
++        { INTERFACE_CONVENTIONAL_PCI_DEVICE },
++        { },
++    };
++    static const TypeInfo pcibase_info = {
++        .name          = TYPE_PCI_PCIBASE_DEVICE,
++        .parent        = TYPE_PCI_DEVICE,
++        .instance_size = sizeof(PCIBaseState),
++        .instance_init = pcibase_instance_init,
++        .class_init    = pcibase_class_init,
++        .interfaces = interfaces,
++    };
++
++    type_register_static(&pcibase_info);
++}
++type_init(pci_pcibase_register_types)
+diff --git a/hw/pci/pci.c b/hw/pci/pci.c
+index cbc7a325681d..f044868b2b20 100644
+--- a/hw/pci/pci.c
++++ b/hw/pci/pci.c
+@@ -23,6 +23,7 @@
+  */
+ 
+ #include "qemu/osdep.h"
++#include "sysemu/kvm.h"
+ #include "qemu-common.h"
+ #include "hw/irq.h"
+ #include "hw/pci/pci.h"
+@@ -34,6 +35,8 @@
+ #include "migration/vmstate.h"
+ #include "monitor/monitor.h"
+ #include "net/net.h"
++#include "qemu/queue.h"
++#include "qemu/typedefs.h"
+ #include "sysemu/numa.h"
+ #include "sysemu/sysemu.h"
+ #include "hw/loader.h"
+@@ -48,6 +51,8 @@
+ #include "qapi/error.h"
+ #include "qapi/qapi-commands-misc.h"
+ #include "qemu/cutils.h"
++#include <bits/stdint-uintn.h>
++#include <string.h>
+ 
+ //#define DEBUG_PCI
+ #ifdef DEBUG_PCI
+@@ -1101,6 +1106,7 @@ static PCIDevice *do_pci_register_device(PCIDevice *pci_dev,
+     pci_dev->config_write = config_write;
+     bus->devices[devfn] = pci_dev;
+     pci_dev->version_id = 2; /* Current pci device vmstate version */
++    QLIST_INIT(&pci_dev->dma_region);
+     return pci_dev;
+ }
+ 
+@@ -1836,6 +1842,141 @@ static PciInfo *qmp_query_pci_bus(PCIBus *bus, int bus_num)
+     return info;
+ }
+ 
++uint64_t target_value[25];
++bool target_value_reset;
++PCIDevice *pci_current_device;
++
++void pci_identify_device(uint32_t bus_number, uint32_t devfn) {
++    PCIHostState *host_bridge = NULL;
++    PCIBus *bus = NULL;
++
++    QLIST_FOREACH(host_bridge, &pci_host_bridges, next) {
++        bus = host_bridge->bus;
++        bus = pci_find_bus_nr(bus, bus_number); 
++        pci_current_device = bus->devices[devfn];
++        break;
++    }
++}
++
++void pci_set_value(uint8_t *data) {
++    int i;
++
++    for (i = 0; i < 25; i++) {
++        target_value[i] = (data[i*4] << 24) + (data[i*4+1] << 16) + (data[i*4+2] << 8) + data[i*4+3];
++    }
++    target_value_reset = true;
++}
++
++void pci_inject_dma_data_on_bus(PCIBus *bus, uint8_t *dma_data) {
++    int devfn;
++    int src_size = FUZZ_DMA_DATA_SIZE;
++    int dst_size = 0;
++    uint8_t *buf = NULL;
++    uint8_t *origin_data = dma_data;
++    PCIBus *sec = NULL;
++    PCIDevice *dev = NULL;
++    PCIDMARegionEntry *dma_entry = NULL;
++
++    for (devfn = 0; devfn < ARRAY_SIZE(bus->devices); ++devfn) {
++        if (!(dev = bus->devices[devfn]))
++            continue;
++        QLIST_FOREACH(dma_entry, &dev->dma_region, entry) {
++            dst_size = dma_entry->size;
++            buf = g_malloc0(dst_size);
++
++            while (src_size < dst_size) {
++                memcpy(buf, dma_data, src_size);
++                dst_size -= src_size;
++                buf += src_size;
++                dma_data = origin_data;
++            }
++            memcpy(buf, dma_data, dst_size);
++            pci_dma_write(dev, dma_entry->dma_addr, buf, dst_size);
++            src_size -= dma_entry->size;
++            dma_data += dma_entry->size;
++            g_free(buf);
++        }
++    }
++    
++    QLIST_FOREACH(sec, &bus->child, sibling) {
++        pci_inject_dma_data_on_bus(sec, dma_data);
++    }
++}
++
++void pci_inject_dma_data(uint8_t *dma_data) {
++    PCIHostState *host_bridge = NULL;
++    PCIBus *bus = NULL;
++    int bus_num;
++
++    QLIST_FOREACH(host_bridge, &pci_host_bridges, next) {
++        bus = host_bridge->bus;
++        bus_num = pci_bus_num(bus);
++        bus = pci_find_bus_nr(bus, bus_num); 
++        pci_inject_dma_data_on_bus(bus, dma_data);
++    }
++}
++
++PCIDevice *pci_find_device_by_name_on_bus(PCIBus *bus, uint8_t *device_name) {
++    int devfn;
++    char *name = (char *)device_name;
++    PCIBus *sec = NULL;
++    PCIDevice *dev = NULL;
++
++    for (devfn = 0; devfn < ARRAY_SIZE(bus->devices); ++devfn) {
++        dev = bus->devices[devfn];
++        if (dev && !strcmp(name, dev->name))
++            return dev;
++    }
++    
++    QLIST_FOREACH(sec, &bus->child, sibling) {
++        dev = pci_find_device_by_name_on_bus(sec, device_name);
++        if (dev)
++            break;
++    }
++
++    return dev;
++}
++
++PCIDevice *pci_find_device_by_name(uint8_t *device_name) {
++    PCIHostState *host_bridge = NULL;
++    PCIBus *bus = NULL;
++    PCIDevice *dev = NULL;
++    int bus_num;
++
++    QLIST_FOREACH(host_bridge, &pci_host_bridges, next) {
++        bus = host_bridge->bus;
++        bus_num = pci_bus_num(bus);
++        bus = pci_find_bus_nr(bus, bus_num);
++        dev = pci_find_device_by_name_on_bus(bus, device_name);
++        if (dev)
++            break;
++    }
++    return dev;
++}
++
++void pci_set_device_irq(uint8_t *device_name) {
++    PCIDevice *dev = pci_find_device_by_name(device_name);
++    if (!dev)
++        return;
++
++    if (msi_enabled(dev)) {
++        msi_notify(dev, 0);
++    } else {
++        pci_set_irq(dev, 1);
++        pci_set_irq(dev, 0);
++    }
++}
++
++void pci_register_dma_region(uint64_t size, uint64_t dma_addr) {
++    PCIDevice *dev = pci_current_device;
++    PCIDMARegionEntry *dma_entry = g_malloc0(sizeof(struct PCIDMARegionEntry));
++
++    dma_entry->dma_addr = dma_addr;
++    dma_entry->size = size;
++    
++    QLIST_INSERT_HEAD(&dev->dma_region, dma_entry, entry);
++}
++
+ PciInfoList *qmp_query_pci(Error **errp)
+ {
+     PciInfoList *info, *head = NULL, *cur_item = NULL;
+diff --git a/hw/usb/dev-wacom.c b/hw/usb/dev-wacom.c
+index 8ed57b3b4444..794017188801 100644
+--- a/hw/usb/dev-wacom.c
++++ b/hw/usb/dev-wacom.c
+@@ -59,7 +59,7 @@ typedef struct USBWacomState {
+     int changed;
+ } USBWacomState;
+ 
+-#define TYPE_USB_WACOM "usb-wacom-tablet"
++#define TYPE_USB_WACOM "wacom"
+ #define USB_WACOM(obj) OBJECT_CHECK(USBWacomState, (obj), TYPE_USB_WACOM)
+ 
+ enum {
+diff --git a/hw/usb/usb_base.c b/hw/usb/usb_base.c
+new file mode 100644
+index 000000000000..7d45811f2799
+--- /dev/null
++++ b/hw/usb/usb_base.c
+@@ -0,0 +1,170 @@
++#include "qemu/osdep.h"
++#include "ui/console.h"
++#include "hw/usb.h"
++#include "migration/vmstate.h"
++#include "qemu/module.h"
++#include "desc.h"
++
++typedef struct USBBaseState {
++    USBDevice dev;
++    USBEndpoint *intr;
++} USBBaseState;
++
++#define TYPE_USB_BASE "usb-base"
++#define USB_BASE(obj) OBJECT_CHECK(USBBaseState, (obj), TYPE_USB_BASE)
++
++enum {
++    STR_MANUFACTURER = 1,
++    STR_PRODUCT,
++    STR_SERIALNUMBER,
++};
++
++static const USBDescStrings desc_strings = {
++    [STR_MANUFACTURER]     = "QEMU",
++    [STR_PRODUCT]          = "Base",
++    [STR_SERIALNUMBER]     = "1",
++};
++
++static const USBDescIface desc_iface_base_high[] = {
++	{
++		.bInterfaceNumber              = BINTERFACENUMBER,
++		.bAlternateSetting			   = 0,
++		.bNumEndpoints                 = 4,
++		.bInterfaceClass               = BINTERFACECLASS,
++		.bInterfaceSubClass            = BINTERFACESUBCLASS, /* boot */
++		.bInterfaceProtocol            = BINTERFACEPROTOCOL,
++		.ndesc                         = 1,
++		.eps = (USBDescEndpoint[]) {
++			{
++				.bEndpointAddress      = USB_DIR_IN | 0x02,
++				.bmAttributes          = USB_ENDPOINT_XFER_BULK,
++				.wMaxPacketSize        = 0x40,
++			},{
++				.bEndpointAddress      = USB_DIR_OUT | 0x02,
++				.bmAttributes          = USB_ENDPOINT_XFER_BULK,
++				.wMaxPacketSize        = 0x40,
++			},
++			{
++				.bEndpointAddress      = USB_DIR_IN | 0x01,
++				.bmAttributes          = USB_ENDPOINT_XFER_INT,
++				.wMaxPacketSize        = 0x40,
++			},{
++				.bEndpointAddress      = USB_DIR_OUT | 0x01,
++				.bmAttributes          = USB_ENDPOINT_XFER_INT,
++				.wMaxPacketSize        = 0x40,
++			}
++		},
++	},
++	{
++		.bInterfaceNumber              = BINTERFACENUMBER,
++		.bAlternateSetting			   = 1,
++		.bNumEndpoints                 = 4,
++		.bInterfaceClass               = BINTERFACECLASS,
++		.bInterfaceSubClass            = BINTERFACESUBCLASS, /* boot */
++		.bInterfaceProtocol            = BINTERFACEPROTOCOL,
++		.ndesc                         = 1,
++		.eps = (USBDescEndpoint[]) {
++			{
++				.bEndpointAddress      = USB_DIR_IN | 0x02,
++				.bmAttributes          = USB_ENDPOINT_XFER_BULK,
++				.wMaxPacketSize        = 0x40,
++			},{
++				.bEndpointAddress      = USB_DIR_OUT | 0x02,
++				.bmAttributes          = USB_ENDPOINT_XFER_BULK,
++				.wMaxPacketSize        = 0x40,
++			},
++			{
++				.bEndpointAddress      = USB_DIR_IN | 0x01,
++				.bmAttributes          = USB_ENDPOINT_XFER_INT,
++				.wMaxPacketSize        = 0x40,
++			},{
++				.bEndpointAddress      = USB_DIR_OUT | 0x01,
++				.bmAttributes          = USB_ENDPOINT_XFER_INT,
++				.wMaxPacketSize        = 0x40,
++			}
++		},
++	},
++};
++
++static const USBDescDevice desc_device_base_high = {
++    .bcdUSB                        = 0x0200,
++    .bDeviceClass                  = BDEVICECLASS,
++    .bDeviceSubClass               = BDEVICESUBCLASS,
++    .bDeviceProtocol               = BDEVICEPROTOCOL,
++    .bMaxPacketSize0               = 8,
++    .bNumConfigurations            = 1,
++    .confs = (USBDescConfig[]) {
++        {
++            .bNumInterfaces        = 1,
++            .bConfigurationValue   = 1,
++            .bmAttributes          = USB_CFG_ATT_ONE,
++            .bMaxPower             = 40,
++            .nif = ARRAY_SIZE(desc_iface_base_high),
++            .ifs = desc_iface_base_high,
++        },
++    },
++};
++
++static const USBDesc desc_base = {
++    .id = {
++        .idVendor          = IDVENDOR,
++        .idProduct         = IDPRODUCT,
++        .bcdDevice         = BCDDEVICE,
++        .iManufacturer     = STR_MANUFACTURER,
++        .iProduct          = STR_PRODUCT,
++        .iSerialNumber     = STR_SERIALNUMBER,
++    },
++    .high = &desc_device_base_high,
++    .str  = desc_strings,
++};
++
++static void usb_base_handle_control(USBDevice *dev, USBPacket *p,
++               int request, int value, int index, int length, uint8_t *data)
++{
++    int ret = usb_desc_handle_control(dev, p, request, value, index, length, data);
++    if (ret >= 0) {
++        return;
++    }
++}
++
++static void usb_base_realize(USBDevice *dev, Error **errp)
++{
++    USBBaseState *s = USB_BASE(dev);
++    usb_desc_create_serial(dev);
++    usb_desc_init(dev);
++    s->intr = usb_ep_get(dev, USB_TOKEN_IN, 1);
++}
++
++static const VMStateDescription vmstate_usb_base = {
++    .name = "usb-base",
++    .unmigratable = 1,
++};
++
++static void usb_base_class_init(ObjectClass *klass, void *data)
++{
++    DeviceClass *dc = DEVICE_CLASS(klass);
++    USBDeviceClass *uc = USB_DEVICE_CLASS(klass);
++
++    uc->product_desc   = "QEMU USB Base";
++    uc->usb_desc       = &desc_base;
++    uc->realize        = usb_base_realize;
++    uc->handle_control = usb_base_handle_control;
++    dc->desc = "QEMU USB Base";
++    dc->vmsd = &vmstate_usb_base;
++    set_bit(DEVICE_CATEGORY_INPUT, dc->categories);
++}
++
++static const TypeInfo base_info = {
++    .name          = TYPE_USB_BASE,
++    .parent        = TYPE_USB_DEVICE,
++    .instance_size = sizeof(USBBaseState),
++    .class_init    = usb_base_class_init,
++};
++
++static void usb_base_register_types(void)
++{
++    type_register_static(&base_info);
++    usb_legacy_register(TYPE_USB_BASE, "base", NULL);
++}
++
++type_init(usb_base_register_types)
+diff --git a/include/hw/arm/virt.h b/include/hw/arm/virt.h
+index 0b41083e9d5c..60264b4843a8 100644
+--- a/include/hw/arm/virt.h
++++ b/include/hw/arm/virt.h
+@@ -67,6 +67,7 @@ enum {
+     VIRT_SMMU,
+     VIRT_UART,
+     VIRT_MMIO,
++	VIRT_I2C,
+     VIRT_RTC,
+     VIRT_FW_CFG,
+     VIRT_PCIE,
+diff --git a/include/hw/misc/edu.h b/include/hw/misc/edu.h
+new file mode 100644
+index 000000000000..0ed2ff39ccab
+--- /dev/null
++++ b/include/hw/misc/edu.h
+@@ -0,0 +1,36 @@
++#ifndef _EDU_H_
++#define _EDU_H_
++
++#define TYPE_PCI_EDU_DEVICE "edu"
++#define EDU(obj)        OBJECT_CHECK(EduState, obj, TYPE_PCI_EDU_DEVICE)
++
++#define FACT_IRQ        0x00000001
++#define DMA_IRQ         0x00000100
++
++#define DMA_START       0x40000
++#define DMA_SIZE        4096
++
++typedef struct {
++    PCIDevice pdev;
++    MemoryRegion mmio[7];
++
++#define EDU_BUF_LEN 1024
++    uint32_t len;
++    uint64_t buf[EDU_BUF_LEN];
++    int is_probe_time;
++
++    QemuThread thread;
++    QemuMutex thr_mutex;
++    QemuCond thr_cond;
++    bool stopping;
++
++    uint32_t addr4;
++    uint32_t fact;
++#define EDU_STATUS_COMPUTING    0x01
++#define EDU_STATUS_IRQFACT      0x80
++    uint32_t status;
++
++    uint32_t irq_status;
++} EduState;
++
++#endif
+\ No newline at end of file
+diff --git a/include/hw/pci/pci.h b/include/hw/pci/pci.h
+index db75c6dfd05e..267050df9e89 100644
+--- a/include/hw/pci/pci.h
++++ b/include/hw/pci/pci.h
+@@ -223,12 +223,12 @@ typedef struct PCIDeviceClass {
+     PCIConfigReadFunc *config_read;
+     PCIConfigWriteFunc *config_write;
+ 
+-    uint16_t vendor_id;
+-    uint16_t device_id;
++    uint32_t vendor_id;
++    uint32_t device_id;
+     uint8_t revision;
+-    uint16_t class_id;
+-    uint16_t subsystem_vendor_id;       /* only for header type = 0 */
+-    uint16_t subsystem_id;              /* only for header type = 0 */
++    uint32_t class_id;
++    uint32_t subsystem_vendor_id;       /* only for header type = 0 */
++    uint32_t subsystem_id;              /* only for header type = 0 */
+ 
+     /*
+      * pci-to-pci bridge or normal device.
+@@ -263,6 +263,12 @@ struct PCIReqIDCache {
+ };
+ typedef struct PCIReqIDCache PCIReqIDCache;
+ 
++typedef struct PCIDMARegionEntry {
++    uint64_t size;
++    uint64_t dma_addr;
++    QLIST_ENTRY(PCIDMARegionEntry) entry;
++} PCIDMARegionEntry;
++
+ struct PCIDevice {
+     DeviceState qdev;
+     bool partially_hotplugged;
+@@ -356,6 +362,8 @@ struct PCIDevice {
+ 
+     /* ID of standby device in net_failover pair */
+     char *failover_pair_id;
++
++    QLIST_HEAD(, PCIDMARegionEntry)  dma_region;
+ };
+ 
+ void pci_register_bar(PCIDevice *pci_dev, int region_num,
+@@ -466,6 +474,14 @@ void pci_for_each_bus_depth_first(PCIBus *bus,
+                                   void (*end)(PCIBus *bus, void *state),
+                                   void *parent_state);
+ PCIDevice *pci_get_function_0(PCIDevice *pci_dev);
++void pci_set_device_irq(uint8_t *data);
++void pci_set_value(uint8_t *data);
++void pci_inject_dma_data(uint8_t *dma_data);
++void pci_inject_dma_data_on_bus(PCIBus *bus, uint8_t *dma_data);
++void pci_register_dma_region(uint64_t size, uint64_t dma_addr);
++PCIDevice *pci_find_device_by_name(uint8_t *device_name);
++PCIDevice *pci_find_device_by_name_on_bus(PCIBus *bus, uint8_t *device_name);
++void pci_identify_device(uint32_t bus_num, uint32_t devfn);
+ 
+ /* Use this wrapper when specific scan order is not required. */
+ static inline
+diff --git a/include/sysemu/kvm.h b/include/sysemu/kvm.h
+index 9fe233b9bf44..116e18a6751d 100644
+--- a/include/sysemu/kvm.h
++++ b/include/sysemu/kvm.h
+@@ -186,6 +186,15 @@ extern bool kvm_msi_use_devid;
+ 
+ #endif  /* CONFIG_KVM_IS_POSSIBLE */
+ 
++#define x86_64_PAGE_SIZE    	0x1000
++#define x86_64_PAGE_MASK   		~(x86_64_PAGE_SIZE - 1)
++#define FUZZ_DATA_SIZE          0x400
++#define FUZZ_DMA_DATA_SIZE      0x10000
++
++extern uint8_t data[FUZZ_DATA_SIZE];
++extern uint8_t dma_data[FUZZ_DMA_DATA_SIZE];
++extern uint8_t device_name[0x10];
++
+ struct kvm_run;
+ struct kvm_lapic_state;
+ struct kvm_irq_routing_entry;
+diff --git a/linux-headers/linux/kvm.h b/linux-headers/linux/kvm.h
+index 3d9b18f7f871..9cc067a644cb 100644
+--- a/linux-headers/linux/kvm.h
++++ b/linux-headers/linux/kvm.h
+@@ -235,6 +235,10 @@ struct kvm_hyperv_exit {
+ #define KVM_EXIT_S390_STSI        25
+ #define KVM_EXIT_IOAPIC_EOI       26
+ #define KVM_EXIT_HYPERV           27
++#define KVM_EXIT_INTERRUPT		  35
++#define KVM_EXIT_PREPARE_DATA	  36
++#define KVM_EXIT_ALLOC_DMA		  37
++#define KVM_EXIT_PCI_CONFIG	  38
+ 
+ /* For KVM_EXIT_INTERNAL_ERROR */
+ /* Emulate instruction failed. */
+diff --git a/qdev-monitor.c b/qdev-monitor.c
+index e6b112eb0ab0..a3031d09d43f 100644
+--- a/qdev-monitor.c
++++ b/qdev-monitor.c
+@@ -37,6 +37,7 @@
+ #include "sysemu/sysemu.h"
+ #include "migration/misc.h"
+ #include "migration/migration.h"
++#include "hw/pci/pci.h"
+ 
+ /*
+  * Aliases were a bad idea from the start.  Let's keep them
+@@ -110,8 +111,12 @@ static bool qdev_class_has_alias(DeviceClass *dc)
+ 
+ static void qdev_print_devinfo(DeviceClass *dc)
+ {
++    bool is_pci_bus = false;
+     qemu_printf("name \"%s\"", object_class_get_name(OBJECT_CLASS(dc)));
+     if (dc->bus_type) {
++        if (!strcmp("PCI", dc->bus_type)) {
++            is_pci_bus = true;
++        }
+         qemu_printf(", bus %s", dc->bus_type);
+     }
+     if (qdev_class_has_alias(dc)) {
+@@ -123,6 +128,15 @@ static void qdev_print_devinfo(DeviceClass *dc)
+     if (!dc->user_creatable) {
+         qemu_printf(", no-user");
+     }
++    if (is_pci_bus) {
++        PCIDeviceClass *k = PCI_DEVICE_CLASS(dc);
++        qemu_printf(", vendor_id: %d", k->vendor_id);
++        qemu_printf(", device_id: %d", k->device_id);
++        qemu_printf(", revision: %d", k->revision);
++        qemu_printf(", subsystem_vendor_id: %d", k->subsystem_vendor_id);
++        qemu_printf(", subsystem_id: %d", k->subsystem_id);
++        qemu_printf(", class_id: %d", k->class_id);
++    }
+     qemu_printf("\n");
+ }
+ 
