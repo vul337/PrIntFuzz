@@ -1,5 +1,3 @@
-# README
-
 # PrIntFuzz: Fuzzing Linux Drivers via Automated Virtual Device Simulation
 
 ## 0. Introduction
@@ -172,4 +170,12 @@ optional arguments:
 
 ## 6. Cite our work
 
-- Todo
+```
+@inproceedings{ma2022printfuzz,
+  title={PrIntFuzz: fuzzing Linux drivers via automated virtual device simulation},
+  author={Ma, Zheyu and Zhao, Bodong and Ren, Letu and Li, Zheming and Ma, Siqi and Luo, Xiapu and Zhang, Chao},
+  booktitle={Proceedings of the 31st ACM SIGSOFT International Symposium on Software Testing and Analysis},
+  pages={404--416},
+  year={2022}
+}
+```
