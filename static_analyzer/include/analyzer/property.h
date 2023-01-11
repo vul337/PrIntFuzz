@@ -94,11 +94,6 @@ private:
 	bool isError(llvm::ICmpInst *, int successor_pos);
     llvm::ConstantStruct *findDriver();
 	llvm::Value * findUser(llvm::Value *);
-
-	void findRegulator(const std::string &, llvm::BasicBlock *);
-	void findNormal(llvm::BasicBlock *);
-	int regulator_cnt_;
-	bool find_reg_bug_;
 };
 
 #endif

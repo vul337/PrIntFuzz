@@ -60,8 +60,6 @@ Property::Property(llvm::Module *llvm_bc_file, json &output_json)
 	read_funcs_.clear();
 
 	visited_bb_.clear();
-	regulator_cnt_ = 0;
-	find_reg_bug_ = false;
 }
 
 bool Property::processBC() {
@@ -100,10 +98,6 @@ bool Property::processBC() {
 			visited_function_.clear();
 			reg_value_.clear();
 			findReg(probe_func_);
-
-			visited_function_.clear();
-			findNormal(&probe_func_->back());
-			findRegulator(probe_func_->getName().str(), &probe_func_->back());
 		}
 	}
 
@@ -123,9 +117,6 @@ bool Property::processBC() {
 		output_json_["Driver Info"]["I2C"] = {};
 		output_json_["Driver Info"]["I2C"]["Reg Value"] = reg_value_;
 		output_json_["Driver Info"]["I2C"]["Reg Width"] = reg_width_;
-		if (find_reg_bug_) {
-			output_json_["Driver Info"]["I2C"]["Regulator Leak"] = probe_func_->getName().str();
-		}
 	}
     mutex_.unlock();
 
@@ -976,129 +967,4 @@ bool Property::handleReturnValue(llvm::Value *return_value, llvm::Function *func
         }
     }
     return true;
-}
-
-void Property::findNormal(llvm::BasicBlock *bb) {
-	for (auto &inst: *bb) {
-		PrintLog("inst: " << inst);
-		auto *ret_inst = llvm::dyn_cast<llvm::ReturnInst>(&inst);
-		if (!ret_inst) {
-			continue;
-		}
-		auto *ret_val = ret_inst->getReturnValue();
-		auto *load_inst = llvm::dyn_cast<llvm::LoadInst>(ret_val);
-		if (!load_inst) {
-			continue;
-		}
-		auto load_val = load_inst->getPointerOperand();
-		for (auto *load_use: load_val->users()) {
-			PrintLog("load_use: " << *load_use);
-			auto *store_inst = llvm::dyn_cast<llvm::StoreInst>(load_use);
-			if (!store_inst) {
-				continue;
-			}
-			auto *constant = llvm::dyn_cast<llvm::ConstantInt>(store_inst->getValueOperand());
-			if (!constant) {
-				continue;
-			}
-			PrintLog("constant: " << constant->getZExtValue());
-			if (!constant->getZExtValue()) {
-				PrintLog("normal_bb: " << store_inst->getParent());
-				visited_bb_.emplace(std::make_pair(store_inst->getParent(), 0));
-			}
-		}
-	}
-}
-
-void Property::findRegulator(const std::string &name, llvm::BasicBlock *bb) {
-	auto tmp_pair = std::make_pair(bb, regulator_cnt_);
-    if (visited_bb_.find(tmp_pair) != visited_bb_.end() || regulator_cnt_ < -10) {
-        return;
-    }
-    visited_bb_.insert(tmp_pair);
-
-	int regulator_decrease = 0;
-	bb_vector_.insert(bb);
-
-	for (auto &inst : *bb) {
-		auto call_inst = llvm::dyn_cast<llvm::CallInst>(&inst);
-		if (!call_inst) {
-			continue;
-		}
-		auto called_function = call_inst->getCalledFunction();
-		if (!called_function || !called_function->hasName()) {
-			continue;
-		}
-		auto called_function_name = called_function->getName().str();
-		if (!called_function->isDeclaration()) {
-			findRegulator(called_function_name, &called_function->back());
-		}
-		if (!called_function_name.compare("regulator_enable") ||
-				!called_function_name.compare("regulator_bulk_enable")) {
-			bool error_path = false;
-			auto *terminator = bb->getTerminator();
-			auto *branch_inst = llvm::dyn_cast<llvm::BranchInst>(terminator);
-			if (branch_inst && branch_inst->isConditional()) {
-				auto *icmp_inst = llvm::dyn_cast<llvm::ICmpInst>(branch_inst->getCondition());
-				if (icmp_inst) {
-					auto predicate = icmp_inst->getPredicate();
-					int pos = -1;
-					if (predicate == llvm::ICmpInst::Predicate::ICMP_EQ) {
-						pos = 1;
-					} else {
-						pos = 0;
-					}
-					auto *succ = terminator->getSuccessor(pos);
-					if (bb_vector_.find(succ) != bb_vector_.end()) {
-						error_path = true;
-					}
-				}
-			}
-
-			PrintLog("regulator_cnt: " << regulator_cnt_);
-			for (auto *item : bb_vector_) {
-				PrintLog(*item);
-			}
-			if (!regulator_cnt_ && !error_path) {
-				find_reg_bug_ = true;
-				return;
-			}
-		} else if (!called_function_name.compare("regulator_disable") ||
-				!called_function_name.compare("regulator_bulk_disable")) {
-			regulator_cnt_--;
-			regulator_decrease++;
-			PrintLog("regualtor decrease in " << *call_inst);
-		} else if (!called_function_name.compare("devm_add_action_or_reset")) {
-			auto *func = llvm::dyn_cast<llvm::Function>(call_inst->getArgOperand(1));
-			for (llvm::inst_iterator I = inst_begin(func), E = inst_end(func); I != E; ++I) {
-				PrintLog("inst: " << *I);
-				auto *call_inst = llvm::dyn_cast<llvm::CallInst>(&*I);
-				if (!call_inst) {
-					continue;
-				}
-				auto *called_function = call_inst->getCalledFunction();
-				if (!called_function || !called_function->hasName()) {
-					continue;
-				}
-				const auto &called_function_name = called_function->getName().str();
-				if (!called_function_name.compare("regulator_disable") ||
-						!called_function_name.compare("regulator_bulk_disable")) {
-					regulator_cnt_--;
-					regulator_decrease = true;
-					PrintLog("regualtor decrease in " << called_function_name);
-					break;
-				}
-			}
-		}
-	}
-
-	for (auto *pre : llvm::predecessors(bb)) {
-		findRegulator(name, pre);
-		if (find_reg_bug_) {
-			return;
-		}
-	}
-
-	regulator_cnt_ += regulator_decrease;
-	bb_vector_.erase(bb);
 }
