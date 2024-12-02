@@ -16,6 +16,6 @@ RELEASE=stretch
 sudo rm -rf $DIR
 sudo mkdir -p $DIR
 sudo chmod 0755 $DIR
-sudo debootstrap --include=$PREINSTALL_PKGS --components=main $RELEASE $DIR
+sudo debootstrap --include=$PREINSTALL_PKGS --components=main $RELEASE $DIR https://mirrors.tuna.tsinghua.edu.cn/debian-elts
 
 popd > /dev/null
